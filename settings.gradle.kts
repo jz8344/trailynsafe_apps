@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "TrailynApp"
 include(":app")
 include(":appdriver")
+include(":appwearos")
