@@ -67,4 +67,22 @@ interface ApiService {
     
     @POST("api/chofer/viajes/{viaje_id}/confirmar-viaje")
     suspend fun confirmarViaje(@Header("Authorization") token: String, @Path("viaje_id") viajeId: Int): Response<Map<String, Any>>
+    
+    // Tracking GPS
+    @POST("api/chofer/tracking/ubicacion")
+    suspend fun enviarUbicacion(
+        @Header("Authorization") token: String,
+        @Body ubicacion: UbicacionRequest
+    ): Response<Map<String, Any>>
 }
+
+// Data class para enviar ubicación GPS
+data class UbicacionRequest(
+    val latitud: Double,
+    val longitud: Double,
+    val ruta_id: Int? = null,
+    val velocidad: Float? = null,
+    val heading: Float? = null,
+    val accuracy: Float? = null,
+    val battery_level: Int? = null
+)
