@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuración para Railway - permitir tanto HTTP como HTTPS temporalmente -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">web-production-86356.up.railway.app</domain>
+    </domain-config>
+    
+    <!-- Localhost para desarrollo -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+    
+    <!-- Configuración base: permitir cleartext temporalmente para debugging -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

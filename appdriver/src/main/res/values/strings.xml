@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">TrailynSafe Driver</string>
+
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_subtitle">Accede a tu cuenta de Conductor</string>
+    <string name="email_hint">  Correo Electrónico</string>
+    <string name="password_hint">  Contraseña</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="no_account_register">¿No tienes cuenta? Contacta al administrador</string>
+
+    <string name="app_logo">Logo de la aplicación</string>
+    <string name="error_icon">Icono de error</string>
+    <string name="success_icon">Icono de éxito</string>
+    <string name="login_icon">Icono de inicio de sesión</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_illustration">Ilustración de onboarding</string>
+    <string name="btn_get_started">Comenzar</string>
+    
+    <string name="onboarding_title_0">Trailyn Driver</string>
+    <string name="onboarding_desc_0">Bienvenido a Trailyn Driver, tu herramienta para gestionar el transporte escolar de forma segura.</string>
+
+    <string name="onboarding_title_1">Gestión de Rutas</string>
+    <string name="onboarding_desc_1">Visualiza y sigue las rutas asignadas en tiempo real con navegación GPS integrada</string>
+    
+    <string name="onboarding_title_2">Control de Asistencia</string>
+    <string name="onboarding_desc_2">Registra fácilmente la entrada y salida de cada estudiante durante el viaje</string>
+    
+    <string name="onboarding_title_3">Comunicación Directa</string>
+    <string name="onboarding_desc_3">Mantén informados a padres y administradores sobre el estado del viaje en todo momento</string>
+    
+    <!-- Main Activity -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_routes">Rutas</string>
+    <string name="nav_profile">Perfil</string>
+</resources>

@@ -1,0 +1,4 @@
+<resources>
+    <!-- API Key de Google Maps -->
+    <string name="google_maps_key" translatable="false">AIzaSyDJHIWjI2-hmIpfITI8C-Os9vo1MJc497k</string>
+</resources>

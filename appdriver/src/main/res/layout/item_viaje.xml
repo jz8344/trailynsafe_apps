@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Icono de viaje -->
+        <ImageView
+            android:id="@+id/icViaje"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/circle_shapes"
+            android:contentDescription="@string/app_name"
+            android:padding="12dp"
+            android:src="@drawable/ic_trips"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/white" />
+
+        <!-- Información del viaje -->
+        <TextView
+            android:id="@+id/tvEscuela"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:text="Escuela Primaria"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toStartOf="@id/badgeEstado"
+            app:layout_constraintStart_toEndOf="@id/icViaje"
+            app:layout_constraintTop_toTopOf="@id/icViaje" />
+
+        <TextView
+            android:id="@+id/tvHorario"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="07:00 AM - 08:30 AM"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="@id/icViaje"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/icViaje" />
+
+        <!-- Badge de estado -->
+        <TextView
+            android:id="@+id/badgeEstado"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/circle_shape"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
+            android:text="Programado"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Divider -->
+        <View
+            android:id="@+id/divider"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/border_color"
+            app:layout_constraintTop_toBottomOf="@id/icViaje" />
+
+        <!-- Detalles -->
+        <TextView
+            android:id="@+id/tvTipoViaje"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:drawablePadding="8dp"
+            android:text="Ida"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:drawableStartCompat="@drawable/ic_arrow_forward"
+            app:drawableTint="@color/primary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/divider" />
+
+        <TextView
+            android:id="@+id/tvUnidad"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:drawablePadding="8dp"
+            android:text="Unidad 001"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            app:drawableStartCompat="@drawable/ic_trips"
+            app:drawableTint="@color/primary"
+            app:layout_constraintBottom_toBottomOf="@id/tvTipoViaje"
+            app:layout_constraintStart_toEndOf="@id/tvTipoViaje"
+            app:layout_constraintTop_toTopOf="@id/tvTipoViaje" />
+
+        <!-- Botón de acción -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAccion"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Comenzar Viaje"
+            android:textSize="14sp"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_arrow_forward"
+            app:iconGravity="textEnd"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTipoViaje" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.cardview.widget.CardView>

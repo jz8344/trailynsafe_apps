@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Configuración base: Solo HTTPS -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Permitir Google Maps (necesita HTTP para tiles en algunas versiones) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">maps.googleapis.com</domain>
+        <domain includeSubdomains="true">maps.google.com</domain>
+        <domain includeSubdomains="true">maps.gstatic.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+    </domain-config>
+</network-security-config>

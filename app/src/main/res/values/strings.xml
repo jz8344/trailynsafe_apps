@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TrailynSafe</string>
+
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_subtitle">Accede a tu cuenta TrailynSafe</string>
+    <string name="email_hint">  Correo Electrónico</string>
+    <string name="password_hint">  Contraseña</string>
+    <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="no_account_register">¿No tienes cuenta? ¡Regístrate aquí!</string>
+
+    <string name="register_title">Registrarte</string>
+    <string name="register_subtitle">Crea tu cuenta en TrailynSafe</string>
+    <string name="nombre_hint">  Nombre</string>
+    <string name="apellidos_hint">  Apellidos</string>
+    <string name="telefono_hint">  Teléfono</string>
+    <string name="password_helper">  Mínimo 6 caracteres</string>
+    <string name="register_button">  Registrarte</string>
+    <string name="has_account_login">¿Ya tienes cuenta? ¡Inicia sesión aquí!</string>
+    <string name="register_success">¡Registro exitoso! Redirigiendo…</string>
+
+    <string name="app_logo">Logo de la aplicación</string>
+    <string name="error_icon">Icono de error</string>
+    <string name="success_icon">Icono de éxito</string>
+    <string name="register_icon">Icono de registro</string>
+    <string name="login_icon">Icono de inicio de sesión</string>
+
+    <!-- Welcome Screen -->
+    <string name="welcome_tagline">Seguridad Inteligente para Transporte Escolar</string>
+    <string name="welcome_description">Trailyn Safe es una solución innovadora que integra tecnologías avanzadas como IoT, GPS, sensores inteligentes y cámaras de vigilancia para garantizar la seguridad de los estudiantes durante el traslado escolar.</string>
+    
+    <!-- Features -->
+    <string name="feature_gps_title">Localización en Tiempo Real</string>
+    <string name="feature_gps_desc">Seguimiento preciso mediante GPS para conocer la ubicación exacta</string>
+    <string name="feature_iot_title">Integración IoT</string>
+    <string name="feature_iot_desc">Sensores inteligentes para monitorear puertas, temperatura y más</string>
+    <string name="feature_notifications_title">Notificaciones Inteligentes</string>
+    <string name="feature_notifications_desc">Alertas para padres sobre llegadas, salidas y eventos importantes</string>
+    
+    <string name="gps_feature">Función GPS</string>
+    <string name="iot_feature">Función IoT</string>
+    <string name="notifications_feature">Función de Notificaciones</string>
+    
+    <!-- Welcome Buttons -->
+    <string name="btn_welcome_login">Iniciar Sesión</string>
+    <string name="btn_welcome_register">Crear Cuenta Nueva</string>
+    
+    <!-- Main Activity -->
+    <string name="track_route">Rastrear ruta</string>
+    <string name="view_students">Ver estudiantes</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_routes">Rutas</string>
+    <string name="nav_students">Estudiantes</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_illustration">Ilustración de onboarding</string>
+    <string name="btn_get_started">Comenzar</string>
+    
+    <string name="onboarding_title_0">Trailyn App</string>
+    <string name="onboarding_desc_0">Bienvenido a Trailyn App, tu solución de seguridad para transporte escolar.</string>
+
+    <string name="onboarding_title_1">Localización GPS</string>
+    <string name="onboarding_desc_1">Seguimiento en tiempo real de la ubicación del transporte escolar para mayor tranquilidad</string>
+    
+    <string name="onboarding_title_2">Sensores Inteligentes</string>
+    <string name="onboarding_desc_2">Monitoreo de puertas, temperatura y seguridad con tecnología IoT avanzada</string>
+    
+    <string name="onboarding_title_3">Notificaciones</string>
+    <string name="onboarding_desc_3">Recibe alertas instantáneas sobre llegadas, salidas y eventos importantes</string>
+    
+    <!-- Google Maps API Key -->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyBwzXXXXXXXXXXXXXXXXXXXXXXXXXX</string>
+    
+    <!-- Monitor Fragment -->
+    <string name="monitor_title">Viajes Disponibles</string>
+    <string name="move_map_instruction">Mueve el mapa para seleccionar el punto de recogida</string>
+    <string name="getting_address">Obteniendo dirección…</string>
+    <string name="address_prefix">📍 %1$s</string>
+    <string name="move_map_select">📍 Mueve el mapa para seleccionar tu ubicación</string>
+    <string name="address_not_available">Dirección no disponible</string>
+    <string name="address_error">📍 No se pudo obtener la dirección</string>
+    <string name="address_fetch_error">📍 Error al obtener dirección</string>
+    <string name="btn_cancel">Cancelar</string>
+    <string name="btn_confirm_trip">Confirmar Viaje</string>
+    <string name="no_trips_available">No hay viajes disponibles</string>
+    <string name="error_loading_trips">Error al cargar viajes</string>
+    <string name="select_valid_location">Selecciona una ubicación válida</string>
+    <string name="trip_confirmed">Viaje confirmado en: %1$s</string>
+    <string name="school_not_specified">Escuela no especificada</string>
+    <string name="driver_not_assigned">Sin asignar</string>
+    <string name="trip_available">Disponible</string>
+    <string name="location_pin">Pin de ubicación</string>
+    
+</resources>
