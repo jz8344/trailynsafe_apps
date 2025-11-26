@@ -34,35 +34,35 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
-    
+
     private lateinit var sessionManager: SessionManager
     private lateinit var googleMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    
+
     private lateinit var tvEscuelaNombre: TextView
     private lateinit var tvEstadoViaje: TextView
     private lateinit var tvTripType: TextView
     private lateinit var btnAction: Button
     private lateinit var fabMyLocation: FloatingActionButton
     private lateinit var progressBar: ProgressBar
-    
+
     private var viajeId: Int = 0
     private var currentViaje: Viaje? = null
-    
+
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
     }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_trip_detail)
-        
+
         sessionManager = SessionManager(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        
+
         // Obtener ID del viaje
         viajeId = intent.getIntExtra("VIAJE_ID", 0)
-        
+
         // Inicializar vistas
         tvEscuelaNombre = findViewById(R.id.tvEscuelaNombre)
         tvEstadoViaje = findViewById(R.id.tvEstadoViaje)
@@ -70,28 +70,28 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         btnAction = findViewById(R.id.btnAccionPrincipal)
         fabMyLocation = findViewById(R.id.fabMyLocation)
         progressBar = findViewById(R.id.progressBar)
-        
+
         // Configurar mapa
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.mapFragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        
+
         // Configurar botones
         fabMyLocation.setOnClickListener {
             moveToMyLocation()
         }
-        
+
         btnAction.setOnClickListener {
             handleTripAction()
         }
-        
+
         // Cargar datos del viaje
         loadTripData()
     }
-    
+
     override fun onMapReady(map: GoogleMap) {
         googleMap = map
-        
+
         // Configurar estilo del mapa
         googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         googleMap.uiSettings.apply {
@@ -99,38 +99,38 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             isCompassEnabled = true
             isMyLocationButtonEnabled = false
         }
-        
+
         // Solicitar permisos de ubicación
         if (checkLocationPermission()) {
             enableMyLocation()
         } else {
             requestLocationPermission()
         }
-        
+
         // Si ya tenemos datos del viaje, mostrarlos en el mapa
         currentViaje?.let { viaje ->
             setupMapForTrip(viaje)
         }
     }
-    
+
     private fun loadTripData() {
         val token = sessionManager.getToken() ?: return
-        
+
         progressBar.visibility = View.VISIBLE
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.apiService.getViajesChofer("Bearer $token")
-                
+
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
-                    
+
                     if (response.isSuccessful && response.body() != null) {
                         val viaje = response.body()!!.find { it.id == viajeId }
                         if (viaje != null) {
                             currentViaje = viaje
                             displayTripInfo(viaje)
-                            
+
                             // Si el mapa ya está listo, configurarlo
                             if (::googleMap.isInitialized) {
                                 setupMapForTrip(viaje)
@@ -165,17 +165,17 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
     }
-    
+
     private fun displayTripInfo(viaje: Viaje) {
         val escuela = viaje.escuela ?: return
-        
+
         tvEscuelaNombre.text = escuela.nombre
         tvTripType.text = when (viaje.tipo_viaje) {
             "ida" -> "Viaje de Ida"
             "vuelta" -> "Viaje de Vuelta"
             else -> viaje.tipo_viaje
         }
-        
+
         // Mostrar estado actual
         val estadoTexto = when (viaje.estado) {
             "pendiente" -> "Pendiente"
@@ -191,7 +191,7 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             else -> viaje.estado
         }
         tvEstadoViaje.text = estadoTexto
-        
+
         // Configurar botón de acción según el estado
         when (viaje.estado) {
             "pendiente" -> {
@@ -240,24 +240,24 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
     }
-    
+
     private fun setupMapForTrip(viaje: Viaje) {
         val escuela = viaje.escuela ?: return
-        
+
         // Obtener coordenadas de la escuela
         val latitud = escuela.latitud?.toDoubleOrNull()
         val longitud = escuela.longitud?.toDoubleOrNull()
-        
+
         if (latitud != null && longitud != null) {
             val schoolLocation = LatLng(latitud, longitud)
-            
+
             // Agregar marcador de la escuela
             googleMap.addMarker(
                 MarkerOptions()
                     .position(schoolLocation)
                     .title(escuela.nombre)
             )
-            
+
             // Configurar cámara con vista isométrica (inclinada)
             val cameraPosition = CameraPosition.Builder()
                 .target(schoolLocation)
@@ -265,18 +265,18 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                 .tilt(45f) // Vista inclinada tipo indicaciones
                 .bearing(0f)
                 .build()
-            
+
             googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
         }
     }
-    
+
     private fun handleTripAction() {
         val viaje = currentViaje ?: return
         val token = sessionManager.getToken() ?: return
-        
+
         btnAction.isEnabled = false
         progressBar.visibility = View.VISIBLE
-        
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = when (viaje.estado) {
@@ -301,12 +301,12 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                             }
                             return@launch
                         }
-                        
+
                         val gpsData = mapOf(
                             "latitud_chofer" to location.latitude,
                             "longitud_chofer" to location.longitude
                         )
-                        
+
                         // Cerrar confirmaciones con GPS del chofer
                         RetrofitClient.apiService.cerrarConfirmaciones("Bearer $token", viaje.id, gpsData)
                     }
@@ -324,10 +324,10 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
                     else -> null
                 }
-                
+
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
-                    
+
                     if (response != null && response.isSuccessful) {
                         val message = when (viaje.estado) {
                             "pendiente" -> "✓ Viaje programado exitosamente"
@@ -343,18 +343,18 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                             message,
                             Toast.LENGTH_LONG
                         ).show()
-                        
+
                         // Recargar datos del viaje
                         loadTripData()
                     } else {
                         btnAction.isEnabled = true
-                        
+
                         val errorMsg = try {
                             response?.errorBody()?.string() ?: "Error al actualizar el viaje"
                         } catch (e: Exception) {
                             "Error al actualizar el viaje"
                         }
-                        
+
                         Toast.makeText(
                             this@TripDetailActivity,
                             errorMsg,
@@ -375,7 +375,7 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
     }
-    
+
     private fun openNavigation() {
         val intent = Intent(this, NavigationActivity::class.java)
         intent.putExtra("VIAJE_ID", viajeId)
