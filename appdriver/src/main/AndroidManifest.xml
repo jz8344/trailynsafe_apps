@@ -8,6 +8,9 @@
     <!-- Permisos para ubicación -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Permiso para cámara (escaneo QR) -->
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
@@ -68,6 +71,13 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:parentActivityName=".ui.trips.TripDetailActivity" />
+        
+        <!-- QR Scanner Activity -->
+        <activity
+            android:name=".ui.qr.QRScannerActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ui.navigation.NavigationActivity" />
             
     </application>
 

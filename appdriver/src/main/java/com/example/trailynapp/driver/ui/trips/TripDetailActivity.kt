@@ -16,6 +16,7 @@ import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.RetrofitClient
 import com.example.trailynapp.driver.ui.navigation.NavigationActivity
 import com.example.trailynapp.driver.utils.SessionManager
+import android.location.Location
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -25,12 +26,11 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.tasks.await
+import kotlinx.coroutines.tasks.await
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withContext
 
 class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {

@@ -56,7 +56,8 @@ dependencies {
     
     // Coroutines para operaciones asíncronas
     implementation(libs.androidx.lifecycle.runtime)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
     
     // Google Maps
     implementation("com.google.android.gms:play-services-maps:18.2.0")
@@ -67,6 +68,9 @@ dependencies {
     
     // SwipeRefreshLayout
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    
+    // ZXing para escaneo de códigos QR
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

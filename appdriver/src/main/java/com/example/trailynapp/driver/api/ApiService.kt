@@ -62,6 +62,14 @@ interface ApiService {
         @Body gps: Map<String, Double>
     ): Response<Map<String, Any>>
     
+    @POST("api/chofer/rutas/{ruta_id}/paradas/{parada_id}/escanear-qr")
+    suspend fun completarParadaConQR(
+        @Header("Authorization") token: String, 
+        @Path("ruta_id") rutaId: Int,
+        @Path("parada_id") paradaId: Int,
+        @Body data: Map<String, Any>
+    ): Response<Map<String, Any>>
+    
     @GET("api/chofer/viajes")
     suspend fun getViajesChofer(@Header("Authorization") token: String): Response<List<com.example.trailynapp.driver.ui.trips.Viaje>>
     

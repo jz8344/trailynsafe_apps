@@ -17,7 +17,10 @@ import androidx.core.content.ContextCompat
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.RetrofitClient
 import com.example.trailynapp.driver.ui.trips.Viaje
+import com.example.trailynapp.driver.ui.qr.QRScannerActivity
 import com.example.trailynapp.driver.utils.SessionManager
+import android.content.Intent
+import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -65,8 +68,21 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     private var currentParadaIndex: Int = 0
     private var isNavigationActive = false
     
+    // Launcher para QR Scanner
+    private val qrScannerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val qrCode = result.data?.getStringExtra(QRScannerActivity.EXTRA_QR_CODE)
+            if (qrCode != null) {
+                processQRCode(qrCode)
+            }
+        }
+    }
+    
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1001
+        private const val PROXIMITY_THRESHOLD_METERS = 50.0 // 50 metros
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -403,7 +419,6 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     }
     
     private fun completeCurrentStop() {
-        val token = sessionManager.getToken() ?: return
         val ruta = currentViaje?.ruta ?: return
         val paradas = ruta.paradas ?: return
         
@@ -419,50 +434,95 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         if (lastKnownLocation == null) {
             Toast.makeText(
                 this,
-                "⚠️ Esperando señal GPS para completar parada...",
+                "⚠️ Esperando señal GPS para validar ubicación...",
                 Toast.LENGTH_SHORT
             ).show()
             return
         }
         
+        // Validar proximidad a la parada
+        val paradaLat = parada.latitud?.toDoubleOrNull()
+        val paradaLng = parada.longitud?.toDoubleOrNull()
+        
+        if (paradaLat == null || paradaLng == null) {
+            Toast.makeText(
+                this,
+                "⚠️ La parada no tiene coordenadas válidas",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        
+        val paradaLocation = LatLng(paradaLat, paradaLng)
+        val distanceToStop = calculateDistance(lastKnownLocation!!, paradaLocation)
+        
+        Log.d("NavigationActivity", "📍 Distancia a parada: ${distanceToStop.toInt()} metros")
+        
+        if (distanceToStop > PROXIMITY_THRESHOLD_METERS) {
+            Toast.makeText(
+                this,
+                "⚠️ Debes estar a menos de ${PROXIMITY_THRESHOLD_METERS.toInt()}m de la parada\n" +
+                "Distancia actual: ${distanceToStop.toInt()}m",
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
+        
+        // ✅ Está cerca, abrir escáner QR
+        Log.d("NavigationActivity", "✅ Dentro del rango de proximidad. Abriendo escáner QR...")
+        openQRScanner()
+    }
+    
+    private fun openQRScanner() {
+        val intent = Intent(this, QRScannerActivity::class.java)
+        qrScannerLauncher.launch(intent)
+    }
+    
+    private fun processQRCode(qrCode: String) {
+        val token = sessionManager.getToken() ?: return
+        val ruta = currentViaje?.ruta ?: return
+        val paradas = ruta.paradas ?: return
+        
+        if (currentParadaIndex >= paradas.size) return
+        
+        val parada = paradas[currentParadaIndex]
+        
+        Log.d("NavigationActivity", "📷 QR escaneado: $qrCode")
+        
         btnCompleteStop.isEnabled = false
         progressBar.visibility = View.VISIBLE
         
-        Log.d("NavigationActivity", "🏁 Completando parada ${parada.id} (${parada.direccion})")
-        Log.d("NavigationActivity", "📍 GPS actual: ${lastKnownLocation!!.latitude}, ${lastKnownLocation!!.longitude}")
-        
-        // Crear datos GPS para regenerar polyline
-        val gpsData = mapOf(
+        // Crear datos con GPS y código QR
+        val requestData = mapOf(
+            "codigo_qr" to qrCode,
             "latitud" to lastKnownLocation!!.latitude,
             "longitud" to lastKnownLocation!!.longitude
         )
         
-        // Sistema de reintentos automáticos (3 intentos con exponential backoff)
         CoroutineScope(Dispatchers.IO).launch {
             var success = false
             var lastError: String? = null
             
             for (attempt in 1..3) {
                 try {
-                    val response = RetrofitClient.apiService.completarParada(
+                    val response = RetrofitClient.apiService.completarParadaConQR(
                         "Bearer $token",
                         ruta.id,
                         parada.id,
-                        gpsData  // 🔄 Enviar GPS para regenerar polyline desde posición actual
+                        requestData
                     )
                     
                     if (response.isSuccessful) {
                         success = true
                         break
                     } else {
-                        lastError = "Error ${response.code()}"
+                        val errorBody = response.errorBody()?.string()
+                        lastError = errorBody ?: "Error ${response.code()}"
                     }
                 } catch (e: Exception) {
                     lastError = e.message
                     if (attempt < 3) {
-                        // Exponential backoff: 1s, 2s, 4s
-                        val delayMs = 1000L * (1 shl (attempt - 1)) // 2^0, 2^1, 2^2
-                        delay(delayMs)
+                        delay(1000L * (1 shl (attempt - 1)))
                     }
                 }
             }
@@ -480,11 +540,11 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                     
                     currentParadaIndex++
                     updateNextStopInfo()
-                    loadTripData()  // 🔄 Recargar datos para obtener polyline regenerado
+                    loadTripData()
                 } else {
                     Toast.makeText(
                         this@NavigationActivity,
-                        "Error persistente: $lastError",
+                        "❌ $lastError",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -729,6 +789,78 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         val c = 2 * atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
         
         return earthRadius * c // Retorna distancia en metros
+    }
+    
+    private fun openQRScanner() {
+        val intent = Intent(this, QRScannerActivity::class.java)
+        qrScannerLauncher.launch(intent)
+    }
+    
+    private fun processQRCode(qrCode: String) {
+        val token = sessionManager.getToken() ?: return
+        val ruta = currentViaje?.ruta ?: return
+        val paradas = ruta.paradas ?: return
+        
+        if (currentParadaIndex >= paradas.size) return
+        
+        val parada = paradas[currentParadaIndex]
+        
+        Log.d("NavigationActivity", "🎫 QR escaneado: $qrCode para parada ${parada.id}")
+        
+        btnCompleteStop.isEnabled = false
+        progressBar.visibility = View.VISIBLE
+        
+        // Crear datos para el backend
+        val requestData = mapOf(
+            "codigo_qr" to qrCode,
+            "latitud" to lastKnownLocation!!.latitude,
+            "longitud" to lastKnownLocation!!.longitude
+        )
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.apiService.completarParadaConQR(
+                    "Bearer $token",
+                    ruta.id,
+                    parada.id,
+                    requestData
+                )
+                
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
+                    btnCompleteStop.isEnabled = true
+                    
+                    if (response.isSuccessful) {
+                        Toast.makeText(
+                            this@NavigationActivity,
+                            "✓ Parada completada correctamente",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        
+                        currentParadaIndex++
+                        updateNextStopInfo()
+                        loadTripData()  // Recargar datos para obtener polyline regenerado
+                    } else {
+                        val errorMsg = response.errorBody()?.string() ?: "Error desconocido"
+                        Toast.makeText(
+                            this@NavigationActivity,
+                            "❌ Error: $errorMsg",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
+                    btnCompleteStop.isEnabled = true
+                    Toast.makeText(
+                        this@NavigationActivity,
+                        "Error: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
     }
     
     private fun drawPolylineFromBackend(encodedPolyline: String) {
