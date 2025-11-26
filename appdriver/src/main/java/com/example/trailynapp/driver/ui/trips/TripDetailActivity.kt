@@ -1,6 +1,7 @@
 package com.example.trailynapp.driver.ui.trips
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
@@ -13,6 +14,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.RetrofitClient
+import com.example.trailynapp.driver.ui.navigation.NavigationActivity
 import com.example.trailynapp.driver.utils.SessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -215,8 +217,12 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                 btnAction.isEnabled = true
             }
             "en_curso" -> {
-                btnAction.text = "Completar Viaje"
+                btnAction.text = "Abrir Navegación"
                 btnAction.isEnabled = true
+                // Auto-abrir navegación si tiene ruta
+                if (viaje.ruta != null) {
+                    openNavigation()
+                }
             }
             "completado", "finalizado" -> {
                 btnAction.text = "Viaje Completado"
@@ -283,24 +289,16 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                         RetrofitClient.apiService.cerrarConfirmaciones("Bearer $token", viaje.id)
                     }
                     "confirmado" -> {
-                        // Confirmar viaje - esto llama a Django k-Means
+                        // Confirmar viaje - esto genera ruta con K-means
                         RetrofitClient.apiService.confirmarViaje("Bearer $token", viaje.id)
                     }
                     "ruta_generada" -> {
-                        val ruta = viaje.ruta
-                        if (ruta != null) {
-                            RetrofitClient.apiService.iniciarRuta("Bearer $token", ruta.id)
-                        } else {
-                            null
-                        }
+                        null // No hacer nada, el botón "Abrir Navegación" lo manejará
                     }
                     "en_curso" -> {
-                        val ruta = viaje.ruta
-                        if (ruta != null) {
-                            RetrofitClient.apiService.completarRuta("Bearer $token", ruta.id)
-                        } else {
-                            null
-                        }
+                        // Abrir navegación
+                        openNavigation()
+                        null
                     }
                     else -> null
                 }
@@ -313,9 +311,9 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                             "pendiente" -> "✓ Viaje programado exitosamente"
                             "programado" -> "✓ Confirmaciones abiertas. Los padres ya pueden confirmar."
                             "en_confirmaciones" -> "✓ Confirmaciones cerradas. Ahora puedes confirmar el viaje."
-                            "confirmado" -> "⚙️ Generando ruta con k-Means. Esto puede tardar unos minutos..."
-                            "ruta_generada" -> "✓ Viaje iniciado"
-                            "en_curso" -> "✓ Viaje completado"
+                            "confirmado" -> "⚙️ Generando ruta con K-means optimizado..."
+                            "ruta_generada" -> "✓ Ruta generada"
+                            "en_curso" -> "Abriendo navegación..."
                             else -> "Acción realizada"
                         }
                         Toast.makeText(
@@ -354,6 +352,12 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
+    }
+    
+    private fun openNavigation() {
+        val intent = Intent(this, NavigationActivity::class.java)
+        intent.putExtra("VIAJE_ID", viajeId)
+        startActivity(intent)
     }
     
     private fun moveToMyLocation() {
