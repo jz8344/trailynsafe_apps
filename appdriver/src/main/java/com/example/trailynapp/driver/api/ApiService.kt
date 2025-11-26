@@ -45,10 +45,22 @@ interface ApiService {
     suspend fun getRutasChofer(@Header("Authorization") token: String): Response<List<com.example.trailynapp.driver.ui.trips.Viaje>>
     
     @POST("api/chofer/rutas/{ruta_id}/iniciar")
-    suspend fun iniciarRuta(@Header("Authorization") token: String, @Path("ruta_id") rutaId: Int): Response<Map<String, Any>>
+    suspend fun iniciarRuta(
+        @Header("Authorization") token: String, 
+        @Path("ruta_id") rutaId: Int,
+        @Body gps: Map<String, Double>
+    ): Response<Map<String, Any>>
     
     @POST("api/chofer/rutas/{ruta_id}/completar")
     suspend fun completarRuta(@Header("Authorization") token: String, @Path("ruta_id") rutaId: Int): Response<Map<String, Any>>
+    
+    @POST("api/chofer/rutas/{ruta_id}/paradas/{parada_id}/completar")
+    suspend fun completarParada(
+        @Header("Authorization") token: String, 
+        @Path("ruta_id") rutaId: Int,
+        @Path("parada_id") paradaId: Int,
+        @Body gps: Map<String, Double>
+    ): Response<Map<String, Any>>
     
     @GET("api/chofer/viajes")
     suspend fun getViajesChofer(@Header("Authorization") token: String): Response<List<com.example.trailynapp.driver.ui.trips.Viaje>>

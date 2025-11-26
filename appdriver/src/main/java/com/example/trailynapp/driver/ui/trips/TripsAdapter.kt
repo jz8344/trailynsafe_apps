@@ -31,7 +31,24 @@ data class Ruta(
     val escuela_id: Int,
     val estado: String?,
     val distancia_total_km: Double?,
-    val tiempo_estimado_minutos: Int?
+    val tiempo_estimado_minutos: Int?,
+    val polyline: String?, // Polyline codificada de Google Maps
+    val paradas: List<Parada>?
+)
+
+data class Parada(
+    val id: Int,
+    val ruta_id: Int,
+    val confirmacion_id: Int,
+    val orden: Int,
+    val direccion: String,
+    val latitud: String?,
+    val longitud: String?,
+    val hora_estimada: String,
+    val distancia_desde_anterior_km: String?,
+    val tiempo_desde_anterior_min: Int?,
+    val cluster_asignado: Int?,
+    val estado: String
 )
 
 data class Escuela(

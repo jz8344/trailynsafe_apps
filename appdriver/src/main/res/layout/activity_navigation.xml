@@ -98,7 +98,7 @@
                 android:lineSpacingExtra="4dp"
                 android:textColor="@color/text_primary" />
 
-            <!-- Botón Comenzar Viaje -->
+            <!-- Botón Comenzar Viaje (DEPRECADO - auto-inicio) -->
             <Button
                 android:id="@+id/btnStartTrip"
                 android:layout_width="match_parent"
@@ -109,7 +109,7 @@
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
                 android:background="@drawable/gradient_primary"
-                android:visibility="visible" />
+                android:visibility="gone" />
 
             <!-- Botón Completar Parada -->
             <Button

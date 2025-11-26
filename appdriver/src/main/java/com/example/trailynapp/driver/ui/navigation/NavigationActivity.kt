@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
@@ -18,7 +19,11 @@ import com.example.trailynapp.driver.api.RetrofitClient
 import com.example.trailynapp.driver.ui.trips.Viaje
 import com.example.trailynapp.driver.utils.SessionManager
 import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -27,14 +32,22 @@ import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     
     private lateinit var sessionManager: SessionManager
     private lateinit var googleMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var locationCallback: LocationCallback? = null
+    private var lastKnownLocation: LatLng? = null
+    private var isTrackingLocation = false
     
     private lateinit var tvRutaNombre: TextView
     private lateinit var tvDistanciaTotal: TextView
@@ -71,12 +84,15 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         tvDistanciaTotal = findViewById(R.id.tvDistanciaTotal)
         tvTiempoEstimado = findViewById(R.id.tvTiempoEstimado)
         tvNextStopInfo = findViewById(R.id.tvNextStopInfo)
-        btnStartTrip = findViewById(R.id.btnStartTrip)
+        btnStartTrip = findViewById(R.id.btnStartTrip) // Oculto por defecto
         btnCompleteStop = findViewById(R.id.btnCompleteStop)
         fabMyLocation = findViewById(R.id.fabMyLocation)
         fabRecenter = findViewById(R.id.fabRecenter)
         progressBar = findViewById(R.id.progressBar)
         layoutInstructions = findViewById(R.id.layoutInstructions)
+        
+        // Ocultar btnStartTrip - ya no se usa (auto-inicio)
+        btnStartTrip.visibility = View.GONE
         
         // Configurar mapa
         val mapFragment = supportFragmentManager
@@ -90,10 +106,6 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         
         fabRecenter.setOnClickListener {
             recenterOnRoute()
-        }
-        
-        btnStartTrip.setOnClickListener {
-            startNavigation()
         }
         
         btnCompleteStop.setOnClickListener {
@@ -120,6 +132,7 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         // Solicitar permisos de ubicación
         if (checkLocationPermission()) {
             enableMyLocation()
+            startLocationTracking() // Iniciar seguimiento GPS continuo
         } else {
             requestLocationPermission()
         }
@@ -128,6 +141,7 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun loadTripData() {
         val token = sessionManager.getToken() ?: return
         
+        android.util.Log.d("NavigationActivity", "🔄 Cargando datos del viaje ID: $viajeId")
         progressBar.visibility = View.VISIBLE
         
         CoroutineScope(Dispatchers.IO).launch {
@@ -138,16 +152,25 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                     progressBar.visibility = View.GONE
                     
                     if (response.isSuccessful && response.body() != null) {
+                        android.util.Log.d("NavigationActivity", "✅ API respondió exitosamente con ${response.body()!!.size} viajes")
                         val viaje = response.body()!!.find { it.id == viajeId }
                         if (viaje != null && viaje.ruta != null) {
+                            android.util.Log.d("NavigationActivity", "✅ Viaje encontrado ID: ${viaje.id}")
+                            android.util.Log.d("NavigationActivity", "📍 Ruta ID: ${viaje.ruta!!.id}, Paradas: ${viaje.ruta!!.paradas?.size ?: 0}")
+                            android.util.Log.d("NavigationActivity", "🗺️ Polyline: ${viaje.ruta!!.polyline?.take(50) ?: "NULL"}...")
+                            
                             currentViaje = viaje
                             displayRouteInfo(viaje)
                             
                             // Si el mapa está listo, dibujar la ruta
                             if (::googleMap.isInitialized) {
+                                android.util.Log.d("NavigationActivity", "🗺️ Mapa listo, dibujando ruta...")
                                 drawRouteOnMap(viaje)
+                            } else {
+                                android.util.Log.e("NavigationActivity", "❌ MAPA NO INICIALIZADO")
                             }
                         } else {
+                            android.util.Log.e("NavigationActivity", "❌ Viaje o ruta no encontrados")
                             Toast.makeText(
                                 this@NavigationActivity,
                                 "Ruta no encontrada",
@@ -155,9 +178,12 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                             ).show()
                             finish()
                         }
+                    } else {
+                        android.util.Log.e("NavigationActivity", "❌ Error en respuesta del API: ${response.code()}")
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("NavigationActivity", "❌ Excepción: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
                     Toast.makeText(
@@ -180,22 +206,13 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         // Mostrar información de la siguiente parada
         updateNextStopInfo()
         
-        // Mostrar botón según el estado
-        when (ruta.estado) {
-            "pendiente" -> {
-                btnStartTrip.visibility = View.VISIBLE
-                btnStartTrip.text = "Comenzar Viaje"
-                btnCompleteStop.visibility = View.GONE
-            }
-            "en_progreso" -> {
-                btnStartTrip.visibility = View.GONE
-                btnCompleteStop.visibility = View.VISIBLE
-                isNavigationActive = true
-            }
-            else -> {
-                btnStartTrip.visibility = View.GONE
-                btnCompleteStop.visibility = View.GONE
-            }
+        // Sistema simplificado: solo mostrar btnCompleteStop si está en_progreso
+        if (ruta.estado == "en_progreso") {
+            btnCompleteStop.visibility = View.VISIBLE
+            isNavigationActive = true
+        } else {
+            // Si no está en_progreso, ocultar todo
+            btnCompleteStop.visibility = View.GONE
         }
     }
     
@@ -271,25 +288,51 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
             routePoints.add(LatLng(escuelaLat, escuelaLng))
         }
         
-        // Dibujar línea de ruta
-        if (routePoints.size >= 2) {
-            val polylineOptions = PolylineOptions()
-                .addAll(routePoints)
-                .color(Color.parseColor("#1976D2"))
-                .width(10f)
-                .geodesic(true)
-            
-            googleMap.addPolyline(polylineOptions)
+        // Debug logs
+        android.util.Log.d("NavigationActivity", "=== DIBUJANDO MAPA ===")
+        android.util.Log.d("NavigationActivity", "Total paradas: ${paradas.size}")
+        android.util.Log.d("NavigationActivity", "Total puntos ruta: ${routePoints.size}")
+        android.util.Log.d("NavigationActivity", "Escuela: [$escuelaLat, $escuelaLng]")
+        paradas.forEachIndexed { i, p ->
+            android.util.Log.d("NavigationActivity", "Parada $i: [${p.latitud}, ${p.longitud}] - ${p.estado}")
         }
         
-        // Posicionar cámara en la primera parada con vista isométrica
+        // Dibujar polyline completa que viene de K-means (PHP)
+        android.util.Log.d("NavigationActivity", "Polyline data: ${ruta.polyline}")
+        
+        if (!ruta.polyline.isNullOrEmpty()) {
+            android.util.Log.d("NavigationActivity", "✅ Dibujando polyline de ${ruta.polyline!!.length} caracteres")
+            drawPolylineFromBackend(ruta.polyline!!)
+        } else {
+            android.util.Log.w("NavigationActivity", "⚠️ No hay polyline, usando fallback con ${routePoints.size} puntos")
+            if (routePoints.size >= 2) {
+                // Fallback: líneas directas si no hay polyline
+                val polylineOptions = PolylineOptions()
+                    .addAll(routePoints)
+                    .color(Color.parseColor("#1976D2"))
+                    .width(10f)
+                    .geodesic(true)
+                googleMap.addPolyline(polylineOptions)
+            }
+        }
+        
+        // Posicionar cámara para mostrar TODA la ruta (paradas + escuela)
         if (routePoints.isNotEmpty()) {
-            val firstStop = routePoints[0]
+            android.util.Log.d("NavigationActivity", "📍 Ajustando cámara para mostrar toda la ruta")
             
+            // Crear bounds que incluya todas las paradas y la escuela
+            val builder = LatLngBounds.Builder()
+            routePoints.forEach { builder.include(it) }
+            val bounds = builder.build()
+            
+            val padding = 150 // padding en pixels
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, padding))
+        } else if (lastKnownLocation != null) {
+            // Si no hay paradas, centrar en ubicación GPS
             val cameraPosition = CameraPosition.Builder()
-                .target(firstStop)
-                .zoom(17f)
-                .tilt(60f) // Vista inclinada estilo navegación
+                .target(lastKnownLocation!!)
+                .zoom(19f)
+                .tilt(67.5f)
                 .bearing(0f)
                 .build()
             
@@ -301,12 +344,24 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         val token = sessionManager.getToken() ?: return
         val ruta = currentViaje?.ruta ?: return
         
+        // Verificar que tenemos GPS actual
+        if (lastKnownLocation == null) {
+            Toast.makeText(this, "⚠️ Esperando señal GPS...", Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         btnStartTrip.isEnabled = false
         progressBar.visibility = View.VISIBLE
         
+        // Enviar GPS actual para regenerar polyline
+        val gpsData = mapOf(
+            "latitud" to lastKnownLocation!!.latitude,
+            "longitud" to lastKnownLocation!!.longitude
+        )
+        
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.apiService.iniciarRuta("Bearer $token", ruta.id)
+                val response = RetrofitClient.apiService.iniciarRuta("Bearer $token", ruta.id, gpsData)
                 
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
@@ -314,7 +369,7 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (response.isSuccessful) {
                         Toast.makeText(
                             this@NavigationActivity,
-                            "🚀 Navegación iniciada",
+                            "🚀 Ruta regenerada desde tu ubicación",
                             Toast.LENGTH_SHORT
                         ).show()
                         
@@ -322,7 +377,7 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                         btnStartTrip.visibility = View.GONE
                         btnCompleteStop.visibility = View.VISIBLE
                         
-                        // Recargar datos
+                        // Recargar datos con nuevo polyline
                         loadTripData()
                     } else {
                         btnStartTrip.isEnabled = true
@@ -360,47 +415,77 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         
         val parada = paradas[currentParadaIndex]
         
+        // Verificar que tengamos GPS actual
+        if (lastKnownLocation == null) {
+            Toast.makeText(
+                this,
+                "⚠️ Esperando señal GPS para completar parada...",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        
         btnCompleteStop.isEnabled = false
         progressBar.visibility = View.VISIBLE
         
+        Log.d("NavigationActivity", "🏁 Completando parada ${parada.id} (${parada.direccion})")
+        Log.d("NavigationActivity", "📍 GPS actual: ${lastKnownLocation!!.latitude}, ${lastKnownLocation!!.longitude}")
+        
+        // Crear datos GPS para regenerar polyline
+        val gpsData = mapOf(
+            "latitud" to lastKnownLocation!!.latitude,
+            "longitud" to lastKnownLocation!!.longitude
+        )
+        
+        // Sistema de reintentos automáticos (3 intentos con exponential backoff)
         CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = RetrofitClient.apiService.completarParada(
-                    "Bearer $token",
-                    ruta.id,
-                    parada.id
-                )
-                
-                withContext(Dispatchers.Main) {
-                    progressBar.visibility = View.GONE
-                    btnCompleteStop.isEnabled = true
+            var success = false
+            var lastError: String? = null
+            
+            for (attempt in 1..3) {
+                try {
+                    val response = RetrofitClient.apiService.completarParada(
+                        "Bearer $token",
+                        ruta.id,
+                        parada.id,
+                        gpsData  // 🔄 Enviar GPS para regenerar polyline desde posición actual
+                    )
                     
                     if (response.isSuccessful) {
-                        Toast.makeText(
-                            this@NavigationActivity,
-                            "✓ Parada completada",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        
-                        currentParadaIndex++
-                        updateNextStopInfo()
-                        loadTripData()
+                        success = true
+                        break
                     } else {
-                        Toast.makeText(
-                            this@NavigationActivity,
-                            "Error al completar parada",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        lastError = "Error ${response.code()}"
+                    }
+                } catch (e: Exception) {
+                    lastError = e.message
+                    if (attempt < 3) {
+                        // Exponential backoff: 1s, 2s, 4s
+                        val delayMs = 1000L * (1 shl (attempt - 1)) // 2^0, 2^1, 2^2
+                        delay(delayMs)
                     }
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    progressBar.visibility = View.GONE
-                    btnCompleteStop.isEnabled = true
+            }
+            
+            withContext(Dispatchers.Main) {
+                progressBar.visibility = View.GONE
+                btnCompleteStop.isEnabled = true
+                
+                if (success) {
                     Toast.makeText(
                         this@NavigationActivity,
-                        "Error: ${e.message}",
+                        "✓ Parada completada - Ruta actualizada",
                         Toast.LENGTH_SHORT
+                    ).show()
+                    
+                    currentParadaIndex++
+                    updateNextStopInfo()
+                    loadTripData()  // 🔄 Recargar datos para obtener polyline regenerado
+                } else {
+                    Toast.makeText(
+                        this@NavigationActivity,
+                        "Error persistente: $lastError",
+                        Toast.LENGTH_LONG
                     ).show()
                 }
             }
@@ -477,25 +562,39 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
             return
         }
         
-        try {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    val myLocation = LatLng(location.latitude, location.longitude)
-                    
-                    val cameraPosition = CameraPosition.Builder()
-                        .target(myLocation)
-                        .zoom(18f)
-                        .tilt(60f)
-                        .bearing(0f)
-                        .build()
-                    
-                    googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
-                } else {
-                    Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
+        if (lastKnownLocation != null) {
+            // Usar última ubicación conocida
+            val cameraPosition = CameraPosition.Builder()
+                .target(lastKnownLocation!!)
+                .zoom(19f)
+                .tilt(67.5f) // Vista isométrica tipo navegación
+                .bearing(googleMap.cameraPosition.bearing) // Mantener dirección actual
+                .build()
+            
+            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+        } else {
+            // Obtener ubicación actual
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        val myLocation = LatLng(location.latitude, location.longitude)
+                        lastKnownLocation = myLocation
+                        
+                        val cameraPosition = CameraPosition.Builder()
+                            .target(myLocation)
+                            .zoom(19f)
+                            .tilt(67.5f)
+                            .bearing(0f)
+                            .build()
+                        
+                        googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
+                    } else {
+                        Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT).show()
+                    }
                 }
+            } catch (e: SecurityException) {
+                Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: SecurityException) {
-            Toast.makeText(this, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -522,6 +621,178 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         } catch (e: SecurityException) {
             Toast.makeText(this, "Error al habilitar ubicación", Toast.LENGTH_SHORT).show()
         }
+    }
+    
+    private fun startLocationTracking() {
+        if (!checkLocationPermission()) {
+            requestLocationPermission()
+            return
+        }
+        
+        if (isTrackingLocation) return
+        isTrackingLocation = true
+        
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY,
+            5000L // Actualizar cada 5 segundos (reducir frecuencia)
+        ).apply {
+            setMinUpdateIntervalMillis(3000L) // Mínimo 3 segundos
+            setMaxUpdateDelayMillis(10000L)
+        }.build()
+        
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                val location = locationResult.lastLocation ?: return
+                
+                val newLocation = LatLng(location.latitude, location.longitude)
+                
+                // Calcular distancia desde última ubicación
+                val distanceMoved = if (lastKnownLocation != null) {
+                    calculateDistance(lastKnownLocation!!, newLocation)
+                } else {
+                    100.0 // Primera ubicación, actualizar siempre
+                }
+                
+                // Solo actualizar si se movió más de 5 metros (evitar rotación errática)
+                if (distanceMoved > 5.0) {
+                    // Calcular bearing solo con movimiento significativo
+                    var bearing = 0f
+                    if (lastKnownLocation != null) {
+                        bearing = calculateBearing(lastKnownLocation!!, newLocation)
+                    }
+                    
+                    lastKnownLocation = newLocation
+                    
+                    // Actualizar cámara siguiendo ubicación con vista isométrica GPS
+                    if (isNavigationActive) {
+                        val cameraPosition = CameraPosition.Builder()
+                            .target(newLocation)
+                            .zoom(19f) // Zoom cercano tipo navegación
+                            .tilt(67.5f) // Vista 3D inclinada
+                            .bearing(bearing) // Dirección de movimiento
+                            .build()
+                        
+                        googleMap.animateCamera(
+                            CameraUpdateFactory.newCameraPosition(cameraPosition),
+                            2000, // Animación más suave de 2 segundos
+                            null
+                        )
+                    }
+                } else if (lastKnownLocation == null) {
+                    // Primera vez, solo guardar ubicación sin actualizar cámara
+                    lastKnownLocation = newLocation
+                }
+            }
+        }
+        
+        try {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback!!,
+                mainLooper
+            )
+        } catch (e: SecurityException) {
+            Toast.makeText(this, "Error al iniciar seguimiento GPS", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun stopLocationTracking() {
+        if (locationCallback != null) {
+            fusedLocationClient.removeLocationUpdates(locationCallback!!)
+            isTrackingLocation = false
+        }
+    }
+    
+    private fun calculateBearing(from: LatLng, to: LatLng): Float {
+        val lat1 = Math.toRadians(from.latitude)
+        val lat2 = Math.toRadians(to.latitude)
+        val dLon = Math.toRadians(to.longitude - from.longitude)
+        
+        val y = sin(dLon) * cos(lat2)
+        val x = cos(lat1) * sin(lat2) -
+                sin(lat1) * cos(lat2) * cos(dLon)
+        
+        val bearing = Math.toDegrees(atan2(y, x))
+        return ((bearing + 360) % 360).toFloat()
+    }
+    
+    private fun calculateDistance(from: LatLng, to: LatLng): Double {
+        val earthRadius = 6371000.0 // Radio de la Tierra en metros
+        
+        val dLat = Math.toRadians(to.latitude - from.latitude)
+        val dLon = Math.toRadians(to.longitude - from.longitude)
+        
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(from.latitude)) * cos(Math.toRadians(to.latitude)) *
+                sin(dLon / 2) * sin(dLon / 2)
+        
+        val c = 2 * atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
+        
+        return earthRadius * c // Retorna distancia en metros
+    }
+    
+    private fun drawPolylineFromBackend(encodedPolyline: String) {
+        try {
+            val decodedPath = decodePolyline(encodedPolyline)
+            
+            if (decodedPath.isNotEmpty()) {
+                val polylineOptions = PolylineOptions()
+                    .addAll(decodedPath)
+                    .color(Color.parseColor("#1976D2")) // Azul
+                    .width(12f)
+                    .geodesic(true)
+                    .jointType(JointType.ROUND)
+                    .startCap(RoundCap())
+                    .endCap(RoundCap())
+                
+                googleMap.addPolyline(polylineOptions)
+            }
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Error al dibujar ruta: ${e.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+    
+    private fun decodePolyline(encoded: String): List<LatLng> {
+        val poly = ArrayList<LatLng>()
+        var index = 0
+        val len = encoded.length
+        var lat = 0
+        var lng = 0
+        
+        while (index < len) {
+            var b: Int
+            var shift = 0
+            var result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlat = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lat += dlat
+            
+            shift = 0
+            result = 0
+            do {
+                b = encoded[index++].code - 63
+                result = result or (b and 0x1f shl shift)
+                shift += 5
+            } while (b >= 0x20)
+            val dlng = if (result and 1 != 0) (result shr 1).inv() else result shr 1
+            lng += dlng
+            
+            val latLng = LatLng(
+                lat.toDouble() / 1E5,
+                lng.toDouble() / 1E5
+            )
+            poly.add(latLng)
+        }
+        
+        return poly
     }
     
     override fun onRequestPermissionsResult(
