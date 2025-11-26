@@ -67,7 +67,7 @@ interface ApiService {
         @Header("Authorization") token: String, 
         @Path("ruta_id") rutaId: Int,
         @Path("parada_id") paradaId: Int,
-        @Body data: Map<String, Any>
+        @Body data: QRScanRequest
     ): Response<Map<String, Any>>
     
     @GET("api/chofer/viajes")
@@ -105,4 +105,11 @@ data class UbicacionRequest(
     val heading: Float? = null,
     val accuracy: Float? = null,
     val battery_level: Int? = null
+)
+
+// Data class para escaneo de QR
+data class QRScanRequest(
+    val codigo_qr: String,
+    val latitud: Double,
+    val longitud: Double
 )

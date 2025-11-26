@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.RetrofitClient
+import com.example.trailynapp.driver.api.QRScanRequest
 import com.example.trailynapp.driver.ui.trips.Viaje
 import com.example.trailynapp.driver.ui.qr.QRScannerActivity
 import com.example.trailynapp.driver.utils.SessionManager
@@ -493,10 +494,10 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         progressBar.visibility = View.VISIBLE
         
         // Crear datos con GPS y código QR
-        val requestData = mapOf(
-            "codigo_qr" to qrCode,
-            "latitud" to lastKnownLocation!!.latitude,
-            "longitud" to lastKnownLocation!!.longitude
+        val requestData = QRScanRequest(
+            codigo_qr = qrCode,
+            latitud = lastKnownLocation!!.latitude,
+            longitud = lastKnownLocation!!.longitude
         )
         
         CoroutineScope(Dispatchers.IO).launch {
@@ -789,78 +790,6 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         val c = 2 * atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
         
         return earthRadius * c // Retorna distancia en metros
-    }
-    
-    private fun openQRScanner() {
-        val intent = Intent(this, QRScannerActivity::class.java)
-        qrScannerLauncher.launch(intent)
-    }
-    
-    private fun processQRCode(qrCode: String) {
-        val token = sessionManager.getToken() ?: return
-        val ruta = currentViaje?.ruta ?: return
-        val paradas = ruta.paradas ?: return
-        
-        if (currentParadaIndex >= paradas.size) return
-        
-        val parada = paradas[currentParadaIndex]
-        
-        Log.d("NavigationActivity", "🎫 QR escaneado: $qrCode para parada ${parada.id}")
-        
-        btnCompleteStop.isEnabled = false
-        progressBar.visibility = View.VISIBLE
-        
-        // Crear datos para el backend
-        val requestData = mapOf(
-            "codigo_qr" to qrCode,
-            "latitud" to lastKnownLocation!!.latitude,
-            "longitud" to lastKnownLocation!!.longitude
-        )
-        
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val response = RetrofitClient.apiService.completarParadaConQR(
-                    "Bearer $token",
-                    ruta.id,
-                    parada.id,
-                    requestData
-                )
-                
-                withContext(Dispatchers.Main) {
-                    progressBar.visibility = View.GONE
-                    btnCompleteStop.isEnabled = true
-                    
-                    if (response.isSuccessful) {
-                        Toast.makeText(
-                            this@NavigationActivity,
-                            "✓ Parada completada correctamente",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        
-                        currentParadaIndex++
-                        updateNextStopInfo()
-                        loadTripData()  // Recargar datos para obtener polyline regenerado
-                    } else {
-                        val errorMsg = response.errorBody()?.string() ?: "Error desconocido"
-                        Toast.makeText(
-                            this@NavigationActivity,
-                            "❌ Error: $errorMsg",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    progressBar.visibility = View.GONE
-                    btnCompleteStop.isEnabled = true
-                    Toast.makeText(
-                        this@NavigationActivity,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
     }
     
     private fun drawPolylineFromBackend(encodedPolyline: String) {
