@@ -25,10 +25,12 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.tasks.await
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withContext
 
 class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -285,8 +287,28 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                         RetrofitClient.apiService.abrirConfirmaciones("Bearer $token", viaje.id)
                     }
                     "en_confirmaciones" -> {
-                        // Cerrar confirmaciones
-                        RetrofitClient.apiService.cerrarConfirmaciones("Bearer $token", viaje.id)
+                        // 📍 Obtener ubicación GPS del chofer antes de cerrar confirmaciones
+                        val location = obtenerUbicacionActual()
+                        if (location == null) {
+                            withContext(Dispatchers.Main) {
+                                progressBar.visibility = View.GONE
+                                btnAction.isEnabled = true
+                                Toast.makeText(
+                                    this@TripDetailActivity,
+                                    "⚠️ Necesitamos tu ubicación GPS para cerrar confirmaciones. Habilita el GPS.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                            return@launch
+                        }
+                        
+                        val gpsData = mapOf(
+                            "latitud_chofer" to location.latitude,
+                            "longitud_chofer" to location.longitude
+                        )
+                        
+                        // Cerrar confirmaciones con GPS del chofer
+                        RetrofitClient.apiService.cerrarConfirmaciones("Bearer $token", viaje.id, gpsData)
                     }
                     "confirmado" -> {
                         // Confirmar viaje - esto genera ruta con K-means
@@ -411,6 +433,26 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         } catch (e: SecurityException) {
             Toast.makeText(this, "Error al habilitar ubicación", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Obtiene la ubicación GPS actual del chofer de forma síncrona
+     * Retorna null si no hay ubicación disponible
+     */
+    private suspend fun obtenerUbicacionActual(): Location? {
+        return try {
+            if (!checkLocationPermission()) {
+                return null
+            }
+            
+            // Intentar obtener última ubicación conocida
+            withContext(Dispatchers.IO) {
+                fusedLocationClient.lastLocation.await()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("TripDetailActivity", "Error obteniendo ubicación: ${e.message}")
+            null
         }
     }
     

@@ -75,7 +75,7 @@ interface ApiService {
     suspend fun cancelarViaje(@Header("Authorization") token: String, @Path("viaje_id") viajeId: Int, @Body body: Map<String, String>): Response<Map<String, Any>>
     
     @POST("api/chofer/viajes/{viaje_id}/cerrar-confirmaciones")
-    suspend fun cerrarConfirmaciones(@Header("Authorization") token: String, @Path("viaje_id") viajeId: Int): Response<Map<String, Any>>
+    suspend fun cerrarConfirmaciones(@Header("Authorization") token: String, @Path("viaje_id") viajeId: Int, @Body gps: Map<String, Double>): Response<Map<String, Any>>
     
     @POST("api/chofer/viajes/{viaje_id}/confirmar-viaje")
     suspend fun confirmarViaje(@Header("Authorization") token: String, @Path("viaje_id") viajeId: Int): Response<Map<String, Any>>
