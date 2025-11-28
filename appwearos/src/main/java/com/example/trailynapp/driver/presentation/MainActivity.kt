@@ -100,3 +100,9 @@ fun WearApp() {
 fun DefaultPreview() {
     WearApp()
 }
+
+@Preview(device = WearDevices.LARGE_ROUND, showSystemUi = true)
+@Composable
+fun LargeRoundPreview() {
+    WearApp()
+}

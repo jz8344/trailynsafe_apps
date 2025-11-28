@@ -14,7 +14,7 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 
-class HealthDataSyncService : Service(), SensorEventListener {
+class HealthDataSyncService : Service(), SensorEventListener, MessageClient.OnMessageReceivedListener {
     
     private lateinit var dataClient: DataClient
     private lateinit var sensorManager: SensorManager
@@ -29,7 +29,10 @@ class HealthDataSyncService : Service(), SensorEventListener {
     override fun onCreate() {
         super.onCreate()
         
+        startForegroundService()
+
         dataClient = Wearable.getDataClient(this)
+        Wearable.getMessageClient(this).addListener(this)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         
         heartRateSensor = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE)
@@ -37,6 +40,30 @@ class HealthDataSyncService : Service(), SensorEventListener {
         
         startSensorMonitoring()
         startDataSync()
+    }
+
+    private fun startForegroundService() {
+        val channelId = "health_sync_channel"
+        val channelName = "Sincronización de Salud"
+        
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId,
+                channelName,
+                android.app.NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        val notificationBuilder = androidx.core.app.NotificationCompat.Builder(this, channelId)
+            .setContentTitle("Monitoreo de Salud Activo")
+            .setContentText("Sincronizando signos vitales con la app del conductor")
+            .setSmallIcon(android.R.drawable.ic_menu_mylocation) // Usar un icono válido
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+
+        startForeground(1, notificationBuilder.build())
     }
     
     private fun startSensorMonitoring() {
@@ -53,22 +80,33 @@ class HealthDataSyncService : Service(), SensorEventListener {
         serviceScope.launch {
             while (isActive) {
                 delay(10000L) // Sincronizar cada 10 segundos
-                
-                val putDataMapReq = PutDataMapRequest.create("/health_data")
-                val dataMap = putDataMapReq.dataMap
-                dataMap.putInt("heart_rate", currentHeartRate)
-                dataMap.putInt("steps", currentSteps)
-                dataMap.putLong("timestamp", System.currentTimeMillis())
-                dataMap.putString("status", getHealthStatus(currentHeartRate))
-                
-                val putDataReq = putDataMapReq.asPutDataRequest().setUrgent()
-                
-                try {
-                    dataClient.putDataItem(putDataReq).await()
-                    Log.d(TAG, "✓ Datos enviados: HR=$currentHeartRate, Steps=$currentSteps")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error enviando datos: ${e.message}")
-                }
+                sendHealthData()
+            }
+        }
+    }
+
+    private suspend fun sendHealthData() {
+        val putDataMapReq = PutDataMapRequest.create("/health_data")
+        val dataMap = putDataMapReq.dataMap
+        dataMap.putInt("heart_rate", currentHeartRate)
+        dataMap.putInt("steps", currentSteps)
+        dataMap.putLong("timestamp", System.currentTimeMillis())
+        dataMap.putString("status", getHealthStatus(currentHeartRate))
+        
+        val putDataReq = putDataMapReq.asPutDataRequest().setUrgent()
+        
+        try {
+            dataClient.putDataItem(putDataReq).await()
+            Log.d(TAG, "✓ Datos enviados: HR=$currentHeartRate, Steps=$currentSteps")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error enviando datos: ${e.message}")
+        }
+    }
+
+    override fun onMessageReceived(messageEvent: MessageEvent) {
+        if (messageEvent.path == "/request_health_data") {
+            serviceScope.launch {
+                sendHealthData()
             }
         }
     }
@@ -104,6 +142,7 @@ class HealthDataSyncService : Service(), SensorEventListener {
     
     override fun onDestroy() {
         super.onDestroy()
+        Wearable.getMessageClient(this).removeListener(this)
         sensorManager.unregisterListener(this)
         serviceScope.cancel()
     }

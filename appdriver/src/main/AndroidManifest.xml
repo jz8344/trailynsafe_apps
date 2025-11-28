@@ -12,6 +12,12 @@
     <!-- Permiso para cámara (escaneo QR) -->
     <uses-permission android:name="android.permission.CAMERA" />
     
+    <!-- Permisos para Bluetooth (Conexión con Wear OS) -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+
     <!-- Permisos para Wear OS -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 

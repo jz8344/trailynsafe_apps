@@ -17,7 +17,13 @@ import androidx.fragment.app.DialogFragment
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.services.WearableDataListenerService
 import com.example.trailynapp.driver.utils.WearOSHealthManager
+import com.google.android.gms.wearable.Node
+import com.google.android.gms.wearable.NodeClient
+import com.google.android.gms.wearable.Wearable
+import android.widget.Toast
+import android.util.Log
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -83,15 +89,69 @@ class WearOSHealthDialog : DialogFragment() {
         }
         
         view.findViewById<View>(R.id.btnRetry).setOnClickListener {
+            requestHealthData()
             updateHealthUI()
         }
     }
     
+    private fun requestHealthData() {
+        val context = requireContext()
+        Toast.makeText(context, "Buscando reloj...", Toast.LENGTH_SHORT).show()
+        
+        val messageClient = Wearable.getMessageClient(context)
+        val nodeClient = Wearable.getNodeClient(context)
+        
+        scope.launch(Dispatchers.IO) {
+            try {
+                val nodes = nodeClient.connectedNodes.await()
+                withContext(Dispatchers.Main) {
+                    if (nodes.isEmpty()) {
+                        Log.w(TAG, "No nodes found")
+                        Toast.makeText(context, "No se encontró reloj conectado via Bluetooth", Toast.LENGTH_LONG).show()
+                        updateConnectionStatus(false)
+                    } else {
+                        Log.d(TAG, "Nodes found: ${nodes.size}")
+                        Toast.makeText(context, "Reloj encontrado. Solicitando datos...", Toast.LENGTH_SHORT).show()
+                        updateConnectionStatus(true)
+                        nodes.forEach { node ->
+                            Log.d(TAG, "Sending request to node: ${node.displayName} (${node.id})")
+                            messageClient.sendMessage(node.id, "/request_health_data", null).await()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error requesting health data", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    
+    private fun updateConnectionStatus(isConnected: Boolean) {
+        if (isConnected) {
+            layoutDisconnected.visibility = View.GONE
+            layoutConnected.visibility = View.VISIBLE
+            tvConnectionStatus.text = "✓ Conectado"
+            tvConnectionStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark, null))
+        } else {
+            layoutDisconnected.visibility = View.VISIBLE
+            layoutConnected.visibility = View.GONE
+            tvConnectionStatus.text = "⚠️ Desconectado"
+            tvConnectionStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
+        }
+    }
+    
     private fun updateHealthUI() {
+        if (!isAdded) return
+        
         val context = requireContext()
         val healthData = WearOSHealthManager.getHealthData(context)
         
-        if (healthData.isConnected) {
+        // Si tenemos datos recientes (menos de 1 min), asumimos conectado
+        val isDataRecent = (System.currentTimeMillis() - healthData.timestamp) < 60000L
+        
+        if (healthData.isConnected || isDataRecent) {
             layoutDisconnected.visibility = View.GONE
             layoutConnected.visibility = View.VISIBLE
             progressBar.visibility = View.GONE
@@ -115,12 +175,8 @@ class WearOSHealthDialog : DialogFragment() {
             tvLastUpdate.text = "Actualizado: ${dateFormat.format(Date(healthData.timestamp))}"
             
         } else {
-            layoutDisconnected.visibility = View.VISIBLE
-            layoutConnected.visibility = View.GONE
-            progressBar.visibility = View.GONE
-            
-            tvConnectionStatus.text = "⚠️ Desconectado"
-            tvConnectionStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark, null))
+            // Solo mostrar desconectado si no hay datos recientes
+            // Pero no forzamos la vista de desconectado si acabamos de pedir datos
         }
     }
     
@@ -137,6 +193,9 @@ class WearOSHealthDialog : DialogFragment() {
         super.onResume()
         val filter = IntentFilter(WearableDataListenerService.ACTION_HEALTH_DATA_UPDATE)
         requireContext().registerReceiver(healthDataReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        
+        // Intentar conectar al abrir
+        requestHealthData()
     }
     
     override fun onPause() {
