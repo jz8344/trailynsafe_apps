@@ -85,6 +85,17 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Botón para ver signos vitales -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewHealth"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:text="⌚ Ver Signos Vitales"
+                android:textSize="14sp"
+                app:cornerRadius="12dp" />
+            
             <!-- Botón de acción principal -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAccionPrincipal"

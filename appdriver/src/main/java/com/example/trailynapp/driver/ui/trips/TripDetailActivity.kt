@@ -9,13 +9,16 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.RetrofitClient
 import com.example.trailynapp.driver.ui.navigation.NavigationActivity
+import com.example.trailynapp.driver.ui.wearos.WearOSHealthDialog
 import com.example.trailynapp.driver.utils.SessionManager
+import com.example.trailynapp.driver.utils.WearOSHealthManager
 import android.location.Location
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -43,6 +46,7 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var tvEstadoViaje: TextView
     private lateinit var tvTripType: TextView
     private lateinit var btnAction: Button
+    private lateinit var btnViewHealth: Button
     private lateinit var fabMyLocation: FloatingActionButton
     private lateinit var progressBar: ProgressBar
 
@@ -68,6 +72,7 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         tvEstadoViaje = findViewById(R.id.tvEstadoViaje)
         tvTripType = findViewById(R.id.tvTipoViaje)
         btnAction = findViewById(R.id.btnAccionPrincipal)
+        btnViewHealth = findViewById(R.id.btnViewHealth)
         fabMyLocation = findViewById(R.id.fabMyLocation)
         progressBar = findViewById(R.id.progressBar)
 
@@ -83,6 +88,10 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
         btnAction.setOnClickListener {
             handleTripAction()
+        }
+        
+        btnViewHealth.setOnClickListener {
+            showWearOSHealthDialog()
         }
 
         // Cargar datos del viaje
@@ -273,6 +282,14 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun handleTripAction() {
         val viaje = currentViaje ?: return
         val token = sessionManager.getToken() ?: return
+        
+        // ⌚ VALIDACIÓN WEAR OS: Solo para estados críticos (ruta_generada, en_curso)
+        if (viaje.estado == "ruta_generada" || viaje.estado == "en_curso") {
+            if (!WearOSHealthManager.isConnected(this)) {
+                showWearOSRequiredDialog()
+                return
+            }
+        }
 
         btnAction.isEnabled = false
         progressBar.visibility = View.VISIBLE
@@ -476,5 +493,34 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
+    }
+    
+    /**
+     * Muestra diálogo de monitoreo de signos vitales Wear OS
+     */
+    private fun showWearOSHealthDialog() {
+        val dialog = WearOSHealthDialog.newInstance()
+        dialog.show(supportFragmentManager, WearOSHealthDialog.TAG)
+    }
+    
+    /**
+     * Muestra diálogo cuando se requiere Wear OS para iniciar viaje
+     */
+    private fun showWearOSRequiredDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("⌚ Smartwatch Requerido")
+            .setMessage(
+                "Para tu seguridad, necesitamos monitorear tus signos vitales durante el viaje.\n\n" +
+                "Por favor:\n" +
+                "1. Conecta tu smartwatch Wear OS\n" +
+                "2. Abre la app TrailynSafe en el reloj\n" +
+                "3. Verifica que los datos se estén sincronizando"
+            )
+            .setPositiveButton("Ver Estado") { _, _ ->
+                showWearOSHealthDialog()
+            }
+            .setNegativeButton("Cancelar", null)
+            .setCancelable(false)
+            .show()
     }
 }

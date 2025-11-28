@@ -19,8 +19,14 @@ import com.example.trailynapp.driver.api.RetrofitClient
 import com.example.trailynapp.driver.api.QRScanRequest
 import com.example.trailynapp.driver.ui.trips.Viaje
 import com.example.trailynapp.driver.ui.qr.QRScannerActivity
+import com.example.trailynapp.driver.ui.wearos.WearOSHealthDialog
 import com.example.trailynapp.driver.utils.SessionManager
+import com.example.trailynapp.driver.utils.WearOSHealthManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import com.example.trailynapp.driver.services.WearableDataListenerService
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -36,6 +42,7 @@ import com.google.android.gms.maps.model.*
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,17 +64,29 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var tvDistanciaTotal: TextView
     private lateinit var tvTiempoEstimado: TextView
     private lateinit var tvNextStopInfo: TextView
+    private lateinit var tvHeartRate: TextView
+    private lateinit var tvHealthStatus: TextView
     private lateinit var btnStartTrip: Button
     private lateinit var btnCompleteStop: Button
     private lateinit var fabMyLocation: FloatingActionButton
     private lateinit var fabRecenter: FloatingActionButton
+    private lateinit var fabHealth: FloatingActionButton
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutInstructions: LinearLayout
+    
+    private val healthDataReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == WearableDataListenerService.ACTION_HEALTH_DATA_UPDATE) {
+                updateHealthDisplay()
+            }
+        }
+    }
     
     private var viajeId: Int = 0
     private var currentViaje: Viaje? = null
     private var currentParadaIndex: Int = 0
     private var isNavigationActive = false
+    private var healthMonitoringJob: Job? = null
     
     // Launcher para QR Scanner
     private val qrScannerLauncher = registerForActivityResult(
@@ -101,10 +120,13 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         tvDistanciaTotal = findViewById(R.id.tvDistanciaTotal)
         tvTiempoEstimado = findViewById(R.id.tvTiempoEstimado)
         tvNextStopInfo = findViewById(R.id.tvNextStopInfo)
+        tvHeartRate = findViewById(R.id.tvHeartRate)
+        tvHealthStatus = findViewById(R.id.tvHealthStatus)
         btnStartTrip = findViewById(R.id.btnStartTrip) // Oculto por defecto
         btnCompleteStop = findViewById(R.id.btnCompleteStop)
         fabMyLocation = findViewById(R.id.fabMyLocation)
         fabRecenter = findViewById(R.id.fabRecenter)
+        fabHealth = findViewById(R.id.fabHealth)
         progressBar = findViewById(R.id.progressBar)
         layoutInstructions = findViewById(R.id.layoutInstructions)
         
@@ -125,9 +147,17 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
             recenterOnRoute()
         }
         
+        fabHealth.setOnClickListener {
+            showWearOSHealthDialog()
+        }
+        
         btnCompleteStop.setOnClickListener {
             completeCurrentStop()
         }
+        
+        // Iniciar monitoreo de signos vitales
+        updateHealthDisplay()
+        startHealthMonitoring()
         
         // Cargar datos del viaje
         loadTripData()
@@ -870,5 +900,71 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
             }
         }
+    }
+    
+    /**
+     * Actualiza la visualización de signos vitales en tiempo real
+     */
+    private fun updateHealthDisplay() {
+        val healthData = WearOSHealthManager.getHealthData(this)
+        
+        if (healthData.isConnected) {
+            tvHeartRate.text = "${healthData.heartRate} BPM"
+            tvHealthStatus.text = healthData.status
+            
+            // Cambiar color según estado
+            val (_, colorRes) = WearOSHealthManager.getHeartRateStatus(healthData.heartRate)
+            tvHealthStatus.setTextColor(resources.getColor(colorRes, null))
+            
+            // Alertar si hay taquicardia
+            if (healthData.heartRate > 120) {
+                Toast.makeText(
+                    this,
+                    "⚠️ Frecuencia cardíaca elevada: ${healthData.heartRate} BPM",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        } else {
+            tvHeartRate.text = "-- BPM"
+            tvHealthStatus.text = "Desconectado"
+            tvHealthStatus.setTextColor(resources.getColor(android.R.color.darker_gray, null))
+        }
+    }
+    
+    /**
+     * Inicia el monitoreo automático de signos vitales
+     */
+    private fun startHealthMonitoring() {
+        healthMonitoringJob?.cancel()
+        healthMonitoringJob = CoroutineScope(Dispatchers.Main).launch {
+            while (true) {
+                delay(3000L) // Actualizar cada 3 segundos
+                updateHealthDisplay()
+            }
+        }
+    }
+    
+    /**
+     * Muestra el diálogo completo de signos vitales
+     */
+    private fun showWearOSHealthDialog() {
+        val dialog = WearOSHealthDialog.newInstance()
+        dialog.show(supportFragmentManager, WearOSHealthDialog.TAG)
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        val filter = IntentFilter(WearableDataListenerService.ACTION_HEALTH_DATA_UPDATE)
+        registerReceiver(healthDataReceiver, filter, RECEIVER_NOT_EXPORTED)
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(healthDataReceiver)
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        healthMonitoringJob?.cancel()
     }
 }

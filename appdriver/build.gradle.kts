@@ -72,6 +72,9 @@ dependencies {
     // ZXing para escaneo de códigos QR
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
     
+    // Wear OS - Comunicación con smartwatch
+    implementation("com.google.android.gms:play-services-wearable:18.2.0")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

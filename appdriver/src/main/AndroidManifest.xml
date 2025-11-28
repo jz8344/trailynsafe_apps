@@ -11,6 +11,9 @@
     
     <!-- Permiso para cámara (escaneo QR) -->
     <uses-permission android:name="android.permission.CAMERA" />
+    
+    <!-- Permisos para Wear OS -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -78,6 +81,19 @@
             android:exported="false"
             android:screenOrientation="portrait"
             android:parentActivityName=".ui.navigation.NavigationActivity" />
+        
+        <!-- Wear OS Data Listener Service -->
+        <service
+            android:name=".services.WearableDataListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/health_data" />
+            </intent-filter>
+        </service>
             
     </application>
 
