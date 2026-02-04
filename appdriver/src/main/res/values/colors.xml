@@ -41,4 +41,12 @@
     <color name="background_light">#F5F8FF</color>
     <color name="indicator_inactive">#D9E3F0</color>
     <color name="border_color">#E0E0E0</color>
+
+    <!-- Trip Status Colors (Lógica tipo alarma) -->
+    <color name="success_green">#28A745</color>
+    <color name="warning_orange">#FD7E14</color>
+    <color name="warning_yellow">#FFC107</color>
+    <color name="error_red">#DC3545</color>
+    <color name="disabled_gray">#9E9E9E</color>
+    <color name="primary_blue">#009FE3</color>
 </resources>

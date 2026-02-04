@@ -135,7 +135,9 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                     progressBar.visibility = View.GONE
 
                     if (response.isSuccessful && response.body() != null) {
-                        val viaje = response.body()!!.find { it.id == viajeId }
+                        val viajesResponse = response.body()!!
+                        val todosLosViajes = viajesResponse.viajes_hoy + viajesResponse.viajes_otros
+                        val viaje = todosLosViajes.find { it.id == viajeId }
                         if (viaje != null) {
                             currentViaje = viaje
                             displayTripInfo(viaje)
@@ -201,45 +203,68 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         }
         tvEstadoViaje.text = estadoTexto
 
-        // Configurar botón de acción según el estado
-        when (viaje.estado) {
-            "pendiente" -> {
+        // Obtener estado efectivo y estado en BD
+        val estadoEfectivo = viaje.estado
+        val estadoBd = viaje.estado_bd ?: viaje.estado
+        
+        // Configurar botón de acción según estado efectivo y estado en BD
+        when {
+            // Si el estado BD es 'programado' pero el estado efectivo indica que es hora de confirmar
+            estadoBd == "programado" && (estadoEfectivo == "en_confirmaciones" || estadoEfectivo == "interactuable") -> {
+                btnAction.text = "🔓 ABRIR CONFIRMACIONES"
+                btnAction.isEnabled = true
+            }
+            estadoBd == "pendiente" -> {
                 btnAction.text = "Programar Viaje"
                 btnAction.isEnabled = true
             }
-            "programado" -> {
-                btnAction.text = "Abrir Confirmaciones"
-                btnAction.isEnabled = true
+            estadoBd == "programado" -> {
+                // Aún no es hora de confirmaciones
+                btnAction.text = "Esperando hora de confirmaciones"
+                btnAction.isEnabled = false
             }
-            "en_confirmaciones" -> {
-                btnAction.text = "Cerrar Confirmaciones"
-                btnAction.isEnabled = (viaje.confirmaciones_actuales ?: 0) >= (viaje.cupo_minimo ?: 1)
+            estadoBd == "en_confirmaciones" -> {
+                // Verificar si puede cerrar o si puede generar ruta (interactuable)
+                if (estadoEfectivo == "interactuable") {
+                    val puedeGenerarRuta = viaje.puede_generar_ruta == true
+                    if (puedeGenerarRuta) {
+                        btnAction.text = "📍 Generar Ruta"
+                        btnAction.isEnabled = true
+                    } else {
+                        val faltantes = (viaje.cupo_minimo ?: 0) - (viaje.confirmaciones_hoy ?: 0)
+                        btnAction.text = "Faltan $faltantes confirmaciones"
+                        btnAction.isEnabled = false
+                    }
+                } else {
+                    btnAction.text = "Esperando confirmaciones..."
+                    btnAction.isEnabled = false
+                }
             }
-            "confirmado" -> {
+            estadoBd == "confirmado" -> {
                 btnAction.text = "Confirmar Viaje (Generar Ruta)"
                 btnAction.isEnabled = true
             }
-            "generando_ruta" -> {
+            estadoBd == "generando_ruta" -> {
                 btnAction.text = "Generando Ruta..."
                 btnAction.isEnabled = false
             }
-            "ruta_generada" -> {
-                btnAction.text = "Comenzar Viaje"
+            estadoBd == "ruta_generada" -> {
+                btnAction.text = "🚀 Comenzar Viaje"
                 btnAction.isEnabled = true
             }
-            "en_curso" -> {
-                btnAction.text = "Abrir Navegación"
+            estadoBd == "en_curso" -> {
+                btnAction.text = "🗺️ Abrir Navegación"
                 btnAction.isEnabled = true
                 // Auto-abrir navegación si tiene ruta
                 if (viaje.ruta != null) {
                     openNavigation()
                 }
             }
-            "completado", "finalizado" -> {
+            estadoBd == "completado" || estadoBd == "finalizado" -> {
                 btnAction.text = "Viaje Completado"
                 btnAction.isEnabled = false
             }
-            "cancelado" -> {
+            estadoBd == "cancelado" -> {
                 btnAction.text = "Viaje Cancelado"
                 btnAction.isEnabled = false
             }
@@ -283,8 +308,12 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         val viaje = currentViaje ?: return
         val token = sessionManager.getToken() ?: return
         
+        // Obtener estado efectivo y estado en BD
+        val estadoEfectivo = viaje.estado
+        val estadoBd = viaje.estado_bd ?: viaje.estado
+        
         // ⌚ VALIDACIÓN WEAR OS: Solo para estados críticos (ruta_generada, en_curso)
-        if (viaje.estado == "ruta_generada" || viaje.estado == "en_curso") {
+        if (estadoBd == "ruta_generada" || estadoBd == "en_curso") {
             if (!WearOSHealthManager.isConnected(this)) {
                 showWearOSRequiredDialog()
                 return
@@ -296,14 +325,24 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = when (viaje.estado) {
-                    "pendiente" -> {
-                        RetrofitClient.apiService.programarViaje("Bearer $token", viaje.id)
-                    }
-                    "programado" -> {
+                val response = when {
+                    // Si estado BD es 'programado' y es hora de abrir confirmaciones
+                    estadoBd == "programado" && (estadoEfectivo == "en_confirmaciones" || estadoEfectivo == "interactuable") -> {
                         RetrofitClient.apiService.abrirConfirmaciones("Bearer $token", viaje.id)
                     }
-                    "en_confirmaciones" -> {
+                    estadoBd == "pendiente" -> {
+                        RetrofitClient.apiService.programarViaje("Bearer $token", viaje.id)
+                    }
+                    estadoBd == "programado" -> {
+                        // No debería llegar aquí si el botón está deshabilitado
+                        null
+                    }
+                    // Si estado BD es 'en_confirmaciones' y es interactuable con suficientes confirmaciones
+                    estadoBd == "en_confirmaciones" && estadoEfectivo == "interactuable" && viaje.puede_generar_ruta == true -> {
+                        // Generar ruta con K-means
+                        RetrofitClient.apiService.confirmarViaje("Bearer $token", viaje.id)
+                    }
+                    estadoBd == "en_confirmaciones" -> {
                         // 📍 Obtener ubicación GPS del chofer antes de cerrar confirmaciones
                         val location = obtenerUbicacionActual()
                         if (location == null) {
@@ -327,14 +366,17 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                         // Cerrar confirmaciones con GPS del chofer
                         RetrofitClient.apiService.cerrarConfirmaciones("Bearer $token", viaje.id, gpsData)
                     }
-                    "confirmado" -> {
+                    estadoBd == "confirmado" -> {
                         // Confirmar viaje - esto genera ruta con K-means
                         RetrofitClient.apiService.confirmarViaje("Bearer $token", viaje.id)
                     }
-                    "ruta_generada" -> {
-                        null // No hacer nada, el botón "Abrir Navegación" lo manejará
+                    estadoBd == "ruta_generada" -> {
+                        // Iniciar viaje - cambiar a en_curso
+                        // TODO: agregar endpoint para iniciar viaje
+                        openNavigation()
+                        null
                     }
-                    "en_curso" -> {
+                    estadoBd == "en_curso" -> {
                         // Abrir navegación
                         openNavigation()
                         null
@@ -346,13 +388,14 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                     progressBar.visibility = View.GONE
 
                     if (response != null && response.isSuccessful) {
-                        val message = when (viaje.estado) {
-                            "pendiente" -> "✓ Viaje programado exitosamente"
-                            "programado" -> "✓ Confirmaciones abiertas. Los padres ya pueden confirmar."
-                            "en_confirmaciones" -> "✓ Confirmaciones cerradas. Ahora puedes confirmar el viaje."
-                            "confirmado" -> "⚙️ Generando ruta con K-means optimizado..."
-                            "ruta_generada" -> "✓ Ruta generada"
-                            "en_curso" -> "Abriendo navegación..."
+                        val message = when {
+                            estadoBd == "pendiente" -> "✓ Viaje programado exitosamente"
+                            estadoBd == "programado" -> "✓ Confirmaciones abiertas. Los padres ya pueden confirmar."
+                            estadoBd == "en_confirmaciones" && viaje.puede_generar_ruta == true -> "⚙️ Generando ruta con K-means optimizado..."
+                            estadoBd == "en_confirmaciones" -> "✓ Confirmaciones cerradas."
+                            estadoBd == "confirmado" -> "⚙️ Generando ruta con K-means optimizado..."
+                            estadoBd == "ruta_generada" -> "✓ Iniciando viaje..."
+                            estadoBd == "en_curso" -> "Abriendo navegación..."
                             else -> "Acción realizada"
                         }
                         Toast.makeText(

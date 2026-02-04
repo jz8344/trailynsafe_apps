@@ -70,8 +70,12 @@ interface ApiService {
         @Body data: QRScanRequest
     ): Response<Map<String, Any>>
     
+    /**
+     * Obtener viajes del chofer con lógica tipo alarma
+     * Respuesta incluye: viajes_hoy, viajes_otros, estado_efectivo calculado en tiempo real
+     */
     @GET("api/chofer/viajes")
-    suspend fun getViajesChofer(@Header("Authorization") token: String): Response<List<com.example.trailynapp.driver.ui.trips.Viaje>>
+    suspend fun getViajesChofer(@Header("Authorization") token: String): Response<com.example.trailynapp.driver.ui.trips.ViajesResponse>
     
     @POST("api/chofer/viajes/{viaje_id}/abrir-confirmaciones")
     suspend fun abrirConfirmaciones(@Header("Authorization") token: String, @Path("viaje_id") viajeId: Int): Response<Map<String, Any>>

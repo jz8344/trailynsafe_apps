@@ -199,8 +199,10 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                     progressBar.visibility = View.GONE
                     
                     if (response.isSuccessful && response.body() != null) {
-                        android.util.Log.d("NavigationActivity", "✅ API respondió exitosamente con ${response.body()!!.size} viajes")
-                        val viaje = response.body()!!.find { it.id == viajeId }
+                        val viajesResponse = response.body()!!
+                        val todosLosViajes = viajesResponse.viajes_hoy + viajesResponse.viajes_otros
+                        android.util.Log.d("NavigationActivity", "✅ API respondió exitosamente con ${todosLosViajes.size} viajes")
+                        val viaje = todosLosViajes.find { it.id == viajeId }
                         if (viaje != null && viaje.ruta != null) {
                             android.util.Log.d("NavigationActivity", "✅ Viaje encontrado ID: ${viaje.id}")
                             android.util.Log.d("NavigationActivity", "📍 Ruta ID: ${viaje.ruta!!.id}, Paradas: ${viaje.ruta!!.paradas?.size ?: 0}")
