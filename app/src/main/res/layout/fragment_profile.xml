@@ -269,8 +269,8 @@
             android:layout_marginTop="16dp"
             android:visibility="gone"
             app:cardCornerRadius="16dp"
-            app:cardElevation="2dp"
-            app:cardBackgroundColor="#E8F5E9">
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/m3_surface_container_high">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -295,8 +295,8 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Cuenta Conectada con Google"
-                        android:textColor="#2E7D32"
+                        android:text="Cuenta Google"
+                        android:textColor="@color/m3_success"
                         android:textSize="18sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -304,61 +304,134 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Tu correo y contraseña están protegidos por Google. Gestiónalos directamente desde tu cuenta de Google para mayor seguridad."
-                    android:textColor="#558B2F"
+                    android:text="Tu correo y contraseña están protegidos por Google."
+                    android:textColor="@color/m3_on_surface_variant"
                     android:textSize="14sp"
                     android:layout_marginBottom="16dp" />
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#558B2F"
-                    android:alpha="0.3"
-                    android:layout_marginBottom="16dp" />
-
-                <!-- Botón Abrir Cuenta de Google -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnOpenGoogleAccount"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:layout_marginBottom="12dp"
-                    android:text="🌐 Abrir Mi Cuenta de Google"
+                    android:layout_height="48dp"
+                    android:text="Abrir Cuenta de Google"
                     android:textAllCaps="false"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     app:cornerRadius="12dp"
-                    app:backgroundTint="#4CAF50"
-                    app:icon="@drawable/ic_arrow_forward"
-                    app:iconGravity="end" />
+                    app:backgroundTint="@color/m3_success" />
 
-                <!-- Botón Configuración de Android -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnOpenAndroidSettings"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:text="⚙️ Ver Cuentas en Android"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="8dp"
+                    android:text="Ver Cuentas en Android"
                     android:textAllCaps="false"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     app:cornerRadius="12dp"
-                    app:strokeColor="#4CAF50"
-                    app:strokeWidth="2dp"
-                    app:iconTint="#4CAF50" />
+                    app:strokeColor="@color/m3_outline" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Ajustes -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/m3_surface_container_high">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ajustes"
+                    android:textColor="@color/m3_on_surface"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Tema -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <FrameLayout
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:background="@drawable/bg_chip_m3">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_theme"
+                            app:tint="@color/m3_primary" />
+
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Tema Oscuro"
+                            android:textColor="@color/m3_on_surface"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Actualmente activo"
+                            android:textColor="@color/m3_on_surface_variant"
+                            android:textSize="13sp"
+                            android:layout_marginTop="2dp" />
+
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchTheme"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true" />
+
+                </LinearLayout>
+
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <!-- Logout Button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLogout"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="24dp"
-            android:text="🚪 Cerrar sesión"
+            android:text="Cerrar sesión"
+            android:textColor="@color/m3_on_surface"
             android:textAllCaps="false"
             android:textSize="16sp"
             app:cornerRadius="16dp"
-            app:strokeColor="@color/primary"
-            app:strokeWidth="2dp" />
+            app:icon="@drawable/ic_logout"
+            app:iconGravity="textStart"
+            app:iconTint="@color/m3_error"
+            app:strokeColor="@color/m3_outline_variant"
+            app:strokeWidth="1dp" />
 
     </LinearLayout>
 </ScrollView>
+
