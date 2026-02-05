@@ -1,6 +1,8 @@
 package com.example.trailynapp.api
 
 import retrofit2.Response
+import retrofit2.http.Query
+import com.google.gson.JsonElement
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -82,6 +84,14 @@ interface ApiService {
     suspend fun getViajesDisponibles(
         @Header("Authorization") token: String
     ): Response<List<ViajeDisponible>>
+
+    // Variante raw para debugging: devuelve JsonElement para permitir leer
+    // la clave `debug` devuelta por el servidor cuando se solicita ?debug=1
+    @GET("viajes/disponibles")
+    suspend fun getViajesDisponiblesRaw(
+        @Header("Authorization") token: String,
+        @Query("debug") debug: Int? = null
+    ): Response<JsonElement>
     
     @GET("confirmaciones/mis-confirmaciones")
     suspend fun getMisConfirmaciones(

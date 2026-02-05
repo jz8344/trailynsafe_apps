@@ -1,4 +1,4 @@
-package com.example.trailynapp.driver.ui.trips
+﻿package com.example.trailynapp.driver.ui.trips
 
 import android.view.LayoutInflater
 import android.view.View
@@ -208,74 +208,48 @@ class TripsAdapter(
             val alpha = if (viaje.interactuable || estadoEfectivo == "en_confirmaciones") 1.0f else 0.6f
             itemView.alpha = alpha
             
-            // Configurar botón según estado efectivo y permisos
-            when (estadoEfectivo) {
-                "no_aplica" -> {
-                    btnAccion.text = "No disponible"
-                    btnAccion.isEnabled = false
+            when (estadoBd) {
+                "pendiente" -> {
+                    btnAccion.text = "📋 Programar Viaje"
+                    btnAccion.isEnabled = true
                 }
                 "programado" -> {
-                    // Si es hora de confirmaciones pero aún no se ha abierto en BD
-                    // Mostrar botón para abrir confirmaciones
-                    btnAccion.text = "Esperando..."
-                    btnAccion.isEnabled = false
+                    btnAccion.text = "🔔 Abrir Confirmaciones"
+                    btnAccion.isEnabled = true
                 }
                 "en_confirmaciones" -> {
-                    // Verificar si el estado en BD es 'programado' - necesita abrir confirmaciones
-                    if (estadoBd == "programado") {
-                        btnAccion.text = "🔓 ABRIR CONFIRMACIONES"
+                    val confirmacionesHoy = viaje.confirmaciones_hoy ?: 0
+                    val cupoMinimo = viaje.cupo_minimo ?: 1
+                    if (confirmacionesHoy >= cupoMinimo) {
+                        btnAccion.text = "🔒 Cerrar Confirmaciones"
                         btnAccion.isEnabled = true
                     } else {
-                        val puedeVerConfirmaciones = (viaje.confirmaciones_hoy ?: 0) > 0
-                        btnAccion.text = if (puedeVerConfirmaciones) "Ver Confirmaciones" else "Esperando papás"
-                        btnAccion.isEnabled = true // Puede ver el estado en tiempo real
+                        btnAccion.text = "⏳ Esperando confirmaciones ($confirmacionesHoy/$cupoMinimo)"
+                        btnAccion.isEnabled = false
                     }
                 }
                 "confirmado" -> {
-                    btnAccion.text = "Esperando ventana"
+                    btnAccion.text = "📍 Generar Ruta"
+                    btnAccion.isEnabled = true
+                }
+                "generando_ruta" -> {
+                    btnAccion.text = "⚙️ Generando ruta..."
                     btnAccion.isEnabled = false
                 }
-                "interactuable" -> {
-                    // ¡MOMENTO CLAVE! Dentro de la ventana de ±20 minutos
-                    // Pero primero verificar si necesita abrir confirmaciones
-                    if (estadoBd == "programado") {
-                        btnAccion.text = "🔓 ABRIR CONFIRMACIONES"
-                        btnAccion.isEnabled = true
-                    } else {
-                        val puedeGenerarRuta = viaje.puede_generar_ruta == true
-                        val puedeIniciar = viaje.puede_iniciar == true
-                        
-                        when {
-                            puedeIniciar -> {
-                                btnAccion.text = "🚀 INICIAR VIAJE"
-                                btnAccion.isEnabled = true
-                            }
-                            puedeGenerarRuta -> {
-                                btnAccion.text = "📍 Generar Ruta"
-                                btnAccion.isEnabled = true
-                            }
-                            else -> {
-                                val faltantes = (viaje.cupo_minimo ?: 0) - (viaje.confirmaciones_hoy ?: 0)
-                                btnAccion.text = "Faltan $faltantes confirmaciones"
-                                btnAccion.isEnabled = false
-                            }
-                        }
-                    }
+                "ruta_generada" -> {
+                    btnAccion.text = "🚀 INICIAR VIAJE"
+                    btnAccion.isEnabled = true
                 }
                 "en_curso" -> {
                     btnAccion.text = "🗺️ Abrir Navegación"
                     btnAccion.isEnabled = true
-                }
-                "expirado" -> {
-                    btnAccion.text = "Tiempo expirado"
-                    btnAccion.isEnabled = false
                 }
                 "finalizado" -> {
                     btnAccion.text = "✓ Completado"
                     btnAccion.isEnabled = false
                 }
                 "cancelado" -> {
-                    btnAccion.text = "Cancelado"
+                    btnAccion.text = "❌ Cancelado"
                     btnAccion.isEnabled = false
                 }
                 else -> {
@@ -283,7 +257,6 @@ class TripsAdapter(
                     btnAccion.isEnabled = true
                 }
             }
-            
             itemView.setOnClickListener {
                 onTripClick(viaje)
             }

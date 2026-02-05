@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -74,6 +75,11 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutInstructions: LinearLayout
     
+    private lateinit var ivManeuverIcon: ImageView
+    private lateinit var tvManeuverDistance: TextView
+    private lateinit var tvManeuverStreet: TextView
+    private lateinit var tvDistanceToStop: TextView
+    
     private val healthDataReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == WearableDataListenerService.ACTION_HEALTH_DATA_UPDATE) {
@@ -129,6 +135,11 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         fabHealth = findViewById(R.id.fabHealth)
         progressBar = findViewById(R.id.progressBar)
         layoutInstructions = findViewById(R.id.layoutInstructions)
+        
+        ivManeuverIcon = findViewById(R.id.ivManeuverIcon)
+        tvManeuverDistance = findViewById(R.id.tvManeuverDistance)
+        tvManeuverStreet = findViewById(R.id.tvManeuverStreet)
+        tvDistanceToStop = findViewById(R.id.tvDistanceToStop)
         
         // Ocultar btnStartTrip - ya no se usa (auto-inicio)
         btnStartTrip.visibility = View.GONE
@@ -770,10 +781,18 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
                             2000, // Animación más suave de 2 segundos
                             null
                         )
+                        
+                        // Actualizar banner de maniobra con distancia en tiempo real
+                        updateManeuverBanner(newLocation, bearing)
                     }
                 } else if (lastKnownLocation == null) {
                     // Primera vez, solo guardar ubicación sin actualizar cámara
                     lastKnownLocation = newLocation
+                }
+                
+                // Siempre actualizar distancia aunque no se mueva mucho
+                if (isNavigationActive && lastKnownLocation != null) {
+                    updateDistanceToStop(lastKnownLocation!!)
                 }
             }
         }
@@ -968,5 +987,106 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onDestroy() {
         super.onDestroy()
         healthMonitoringJob?.cancel()
+    }
+    
+    /**
+     * Actualiza el banner de maniobra con la distancia y dirección a la siguiente parada
+     */
+    private fun updateManeuverBanner(currentLocation: LatLng, currentBearing: Float) {
+        val viaje = currentViaje ?: return
+        val ruta = viaje.ruta ?: return
+        val paradas = ruta.paradas ?: return
+        
+        if (currentParadaIndex >= paradas.size) {
+            // Última parada completada, mostrar destino final (escuela)
+            tvManeuverDistance.text = "🏫 Destino"
+            tvManeuverStreet.text = viaje.escuela?.nombre ?: "Escuela"
+            ivManeuverIcon.setImageResource(R.drawable.ic_nav_straight)
+            return
+        }
+        
+        val nextStop = paradas[currentParadaIndex]
+        val paradaLat = nextStop.latitud?.toDoubleOrNull()
+        val paradaLng = nextStop.longitud?.toDoubleOrNull()
+        
+        if (paradaLat == null || paradaLng == null) return
+        
+        val paradaLocation = LatLng(paradaLat, paradaLng)
+        val distanceMeters = calculateDistance(currentLocation, paradaLocation)
+        
+        // Calcular bearing hacia la parada
+        val bearingToStop = calculateBearing(currentLocation, paradaLocation)
+        
+        // Determinar diferencia de ángulo para saber si girar
+        val bearingDiff = (bearingToStop - currentBearing + 360) % 360
+        val normalizedDiff = if (bearingDiff > 180) bearingDiff - 360 else bearingDiff
+        
+        // Seleccionar icono de maniobra
+        val maneuverIcon = getManeuverIcon(normalizedDiff)
+        ivManeuverIcon.setImageResource(maneuverIcon)
+        
+        // Formatear distancia
+        val distanceText = when {
+            distanceMeters >= 1000 -> String.format("En %.1f km", distanceMeters / 1000)
+            distanceMeters >= 100 -> "En ${distanceMeters.toInt()} m"
+            distanceMeters >= 50 -> "En ${distanceMeters.toInt()} m"
+            else -> "📍 Llegando..."
+        }
+        
+        tvManeuverDistance.text = distanceText
+        tvManeuverStreet.text = "Parada #${nextStop.orden}: ${nextStop.direccion}"
+    }
+    
+    /**
+     * Actualiza solo la distancia a la parada actual (llamado frecuentemente)
+     */
+    private fun updateDistanceToStop(currentLocation: LatLng) {
+        val viaje = currentViaje ?: return
+        val ruta = viaje.ruta ?: return
+        val paradas = ruta.paradas ?: return
+        
+        if (currentParadaIndex >= paradas.size) {
+            // Calcular distancia a la escuela
+            val escuela = viaje.escuela
+            val escuelaLat = escuela?.latitud?.toDoubleOrNull()
+            val escuelaLng = escuela?.longitud?.toDoubleOrNull()
+            
+            if (escuelaLat != null && escuelaLng != null) {
+                val distanceMeters = calculateDistance(currentLocation, LatLng(escuelaLat, escuelaLng))
+                tvDistanceToStop.text = formatDistanceShort(distanceMeters)
+            }
+            return
+        }
+        
+        val nextStop = paradas[currentParadaIndex]
+        val paradaLat = nextStop.latitud?.toDoubleOrNull()
+        val paradaLng = nextStop.longitud?.toDoubleOrNull()
+        
+        if (paradaLat == null || paradaLng == null) return
+        
+        val paradaLocation = LatLng(paradaLat, paradaLng)
+        val distanceMeters = calculateDistance(currentLocation, paradaLocation)
+        tvDistanceToStop.text = formatDistanceShort(distanceMeters)
+    }
+    
+    /**
+     * Formatea distancia de forma compacta
+     */
+    private fun formatDistanceShort(meters: Double): String {
+        return when {
+            meters >= 1000 -> String.format("%.1f km", meters / 1000)
+            else -> "${meters.toInt()} m"
+        }
+    }
+    
+    /**
+     * Retorna el icono de maniobra según el cambio de dirección
+     */
+    private fun getManeuverIcon(bearingChange: Float): Int {
+        return when {
+            bearingChange < -30 -> R.drawable.ic_nav_turn_left
+            bearingChange > 30 -> R.drawable.ic_nav_turn_right
+            else -> R.drawable.ic_nav_straight
+        }
     }
 }

@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.androidx.credentials.play.services)
     implementation(libs.googleid)
     
+    // ZXing para generación de códigos QR
+    implementation("com.google.zxing:core:3.5.2")
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

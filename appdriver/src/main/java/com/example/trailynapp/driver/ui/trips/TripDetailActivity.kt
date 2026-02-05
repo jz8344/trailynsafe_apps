@@ -211,41 +211,35 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         when {
             // Si el estado BD es 'programado' pero el estado efectivo indica que es hora de confirmar
             estadoBd == "programado" && (estadoEfectivo == "en_confirmaciones" || estadoEfectivo == "interactuable") -> {
-                btnAction.text = "🔓 ABRIR CONFIRMACIONES"
+                btnAction.text = "� ABRIR CONFIRMACIONES"
                 btnAction.isEnabled = true
             }
             estadoBd == "pendiente" -> {
-                btnAction.text = "Programar Viaje"
+                btnAction.text = "📋 Programar Viaje"
                 btnAction.isEnabled = true
             }
             estadoBd == "programado" -> {
-                // Aún no es hora de confirmaciones
-                btnAction.text = "Esperando hora de confirmaciones"
-                btnAction.isEnabled = false
+                btnAction.text = "🔔 Abrir Confirmaciones"
+                btnAction.isEnabled = true
             }
             estadoBd == "en_confirmaciones" -> {
-                // Verificar si puede cerrar o si puede generar ruta (interactuable)
-                if (estadoEfectivo == "interactuable") {
-                    val puedeGenerarRuta = viaje.puede_generar_ruta == true
-                    if (puedeGenerarRuta) {
-                        btnAction.text = "📍 Generar Ruta"
-                        btnAction.isEnabled = true
-                    } else {
-                        val faltantes = (viaje.cupo_minimo ?: 0) - (viaje.confirmaciones_hoy ?: 0)
-                        btnAction.text = "Faltan $faltantes confirmaciones"
-                        btnAction.isEnabled = false
-                    }
+                val confirmacionesHoy = viaje.confirmaciones_hoy ?: 0
+                val cupoMinimo = viaje.cupo_minimo ?: 1
+                if (confirmacionesHoy >= cupoMinimo) {
+                    btnAction.text = "🔒 Cerrar Confirmaciones ($confirmacionesHoy confirmados)"
+                    btnAction.isEnabled = true
                 } else {
-                    btnAction.text = "Esperando confirmaciones..."
+                    val faltantes = cupoMinimo - confirmacionesHoy
+                    btnAction.text = "⏳ Faltan $faltantes confirmaciones ($confirmacionesHoy/$cupoMinimo)"
                     btnAction.isEnabled = false
                 }
             }
             estadoBd == "confirmado" -> {
-                btnAction.text = "Confirmar Viaje (Generar Ruta)"
+                btnAction.text = "📍 Generar Ruta"
                 btnAction.isEnabled = true
             }
             estadoBd == "generando_ruta" -> {
-                btnAction.text = "Generando Ruta..."
+                btnAction.text = "⚙️ Generando Ruta..."
                 btnAction.isEnabled = false
             }
             estadoBd == "ruta_generada" -> {
@@ -308,8 +302,6 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         val viaje = currentViaje ?: return
         val token = sessionManager.getToken() ?: return
         
-        // Obtener estado efectivo y estado en BD
-        val estadoEfectivo = viaje.estado
         val estadoBd = viaje.estado_bd ?: viaje.estado
         
         // ⌚ VALIDACIÓN WEAR OS: Solo para estados críticos (ruta_generada, en_curso)
@@ -320,64 +312,127 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
             }
         }
 
+        // Caso especial: en_confirmaciones con cupo mínimo → mostrar diálogo de confirmación
+        if (estadoBd == "en_confirmaciones") {
+            val confirmacionesHoy = viaje.confirmaciones_hoy ?: 0
+            val cupoMinimo = viaje.cupo_minimo ?: 1
+            
+            if (confirmacionesHoy >= cupoMinimo) {
+                showCerrarConfirmacionesDialog(viaje, token, confirmacionesHoy)
+                return
+            } else {
+                Toast.makeText(
+                    this,
+                    "⚠️ Aún no hay suficientes confirmaciones ($confirmacionesHoy/$cupoMinimo)",
+                    Toast.LENGTH_LONG
+                ).show()
+                return
+            }
+        }
+
+        // Para otros estados, ejecutar acción directamente
+        executeAction(viaje, token, estadoBd)
+    }
+    
+    private fun showCerrarConfirmacionesDialog(viaje: Viaje, token: String, confirmaciones: Int) {
+        AlertDialog.Builder(this)
+            .setTitle("🔒 Cerrar Confirmaciones")
+            .setMessage(
+                "¿Deseas cerrar las confirmaciones y confirmar el viaje?\n\n" +
+                "📊 Confirmaciones actuales: $confirmaciones\n\n" +
+                "Una vez cerradas, los padres ya no podrán confirmar asistencia para este viaje."
+            )
+            .setPositiveButton("Sí, cerrar y confirmar") { _, _ ->
+                cerrarConfirmacionesYConfirmar(viaje, token)
+            }
+            .setNegativeButton("Cancelar", null)
+            .setCancelable(true)
+            .show()
+    }
+    
+    private fun cerrarConfirmacionesYConfirmar(viaje: Viaje, token: String) {
+        btnAction.isEnabled = false
+        progressBar.visibility = View.VISIBLE
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                // Obtener ubicación GPS del chofer
+                val location = obtenerUbicacionActual()
+                if (location == null) {
+                    withContext(Dispatchers.Main) {
+                        progressBar.visibility = View.GONE
+                        btnAction.isEnabled = true
+                        Toast.makeText(
+                            this@TripDetailActivity,
+                            "⚠️ Necesitamos tu ubicación GPS. Habilita el GPS.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    return@launch
+                }
+                
+                val gpsData = mapOf(
+                    "latitud_chofer" to location.latitude,
+                    "longitud_chofer" to location.longitude
+                )
+                
+                val response = RetrofitClient.apiService.cerrarConfirmaciones(
+                    "Bearer $token", 
+                    viaje.id, 
+                    gpsData
+                )
+                
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
+                    
+                    if (response.isSuccessful) {
+                        Toast.makeText(
+                            this@TripDetailActivity,
+                            "✅ Confirmaciones cerradas. Viaje confirmado.\nAhora puedes generar la ruta.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        loadTripData()
+                    } else {
+                        btnAction.isEnabled = true
+                        val errorMsg = try {
+                            response.errorBody()?.string() ?: "Error al cerrar confirmaciones"
+                        } catch (e: Exception) {
+                            "Error al cerrar confirmaciones"
+                        }
+                        Toast.makeText(this@TripDetailActivity, errorMsg, Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    progressBar.visibility = View.GONE
+                    btnAction.isEnabled = true
+                    Toast.makeText(this@TripDetailActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+    
+    private fun executeAction(viaje: Viaje, token: String, estadoBd: String) {
         btnAction.isEnabled = false
         progressBar.visibility = View.VISIBLE
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = when {
-                    // Si estado BD es 'programado' y es hora de abrir confirmaciones
-                    estadoBd == "programado" && (estadoEfectivo == "en_confirmaciones" || estadoEfectivo == "interactuable") -> {
-                        RetrofitClient.apiService.abrirConfirmaciones("Bearer $token", viaje.id)
-                    }
-                    estadoBd == "pendiente" -> {
+                val response = when (estadoBd) {
+                    "pendiente" -> {
                         RetrofitClient.apiService.programarViaje("Bearer $token", viaje.id)
                     }
-                    estadoBd == "programado" -> {
-                        // No debería llegar aquí si el botón está deshabilitado
-                        null
+                    "programado" -> {
+                        RetrofitClient.apiService.abrirConfirmaciones("Bearer $token", viaje.id)
                     }
-                    // Si estado BD es 'en_confirmaciones' y es interactuable con suficientes confirmaciones
-                    estadoBd == "en_confirmaciones" && estadoEfectivo == "interactuable" && viaje.puede_generar_ruta == true -> {
-                        // Generar ruta con K-means
+                    "confirmado" -> {
                         RetrofitClient.apiService.confirmarViaje("Bearer $token", viaje.id)
                     }
-                    estadoBd == "en_confirmaciones" -> {
-                        // 📍 Obtener ubicación GPS del chofer antes de cerrar confirmaciones
-                        val location = obtenerUbicacionActual()
-                        if (location == null) {
-                            withContext(Dispatchers.Main) {
-                                progressBar.visibility = View.GONE
-                                btnAction.isEnabled = true
-                                Toast.makeText(
-                                    this@TripDetailActivity,
-                                    "⚠️ Necesitamos tu ubicación GPS para cerrar confirmaciones. Habilita el GPS.",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                            return@launch
-                        }
-
-                        val gpsData = mapOf(
-                            "latitud_chofer" to location.latitude,
-                            "longitud_chofer" to location.longitude
-                        )
-
-                        // Cerrar confirmaciones con GPS del chofer
-                        RetrofitClient.apiService.cerrarConfirmaciones("Bearer $token", viaje.id, gpsData)
-                    }
-                    estadoBd == "confirmado" -> {
-                        // Confirmar viaje - esto genera ruta con K-means
-                        RetrofitClient.apiService.confirmarViaje("Bearer $token", viaje.id)
-                    }
-                    estadoBd == "ruta_generada" -> {
-                        // Iniciar viaje - cambiar a en_curso
-                        // TODO: agregar endpoint para iniciar viaje
+                    "ruta_generada" -> {
                         openNavigation()
                         null
                     }
-                    estadoBd == "en_curso" -> {
-                        // Abrir navegación
+                    "en_curso" -> {
                         openNavigation()
                         null
                     }
@@ -388,49 +443,31 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
                     progressBar.visibility = View.GONE
 
                     if (response != null && response.isSuccessful) {
-                        val message = when {
-                            estadoBd == "pendiente" -> "✓ Viaje programado exitosamente"
-                            estadoBd == "programado" -> "✓ Confirmaciones abiertas. Los padres ya pueden confirmar."
-                            estadoBd == "en_confirmaciones" && viaje.puede_generar_ruta == true -> "⚙️ Generando ruta con K-means optimizado..."
-                            estadoBd == "en_confirmaciones" -> "✓ Confirmaciones cerradas."
-                            estadoBd == "confirmado" -> "⚙️ Generando ruta con K-means optimizado..."
-                            estadoBd == "ruta_generada" -> "✓ Iniciando viaje..."
-                            estadoBd == "en_curso" -> "Abriendo navegación..."
+                        val message = when (estadoBd) {
+                            "pendiente" -> "✅ Viaje programado exitosamente"
+                            "programado" -> "✅ Confirmaciones abiertas. Los padres ya pueden confirmar."
+                            "confirmado" -> "⚙️ Generando ruta óptima..."
+                            "ruta_generada" -> "✅ Iniciando viaje..."
+                            "en_curso" -> "🗺️ Abriendo navegación..."
                             else -> "Acción realizada"
                         }
-                        Toast.makeText(
-                            this@TripDetailActivity,
-                            message,
-                            Toast.LENGTH_LONG
-                        ).show()
-
-                        // Recargar datos del viaje
+                        Toast.makeText(this@TripDetailActivity, message, Toast.LENGTH_LONG).show()
                         loadTripData()
                     } else {
                         btnAction.isEnabled = true
-
                         val errorMsg = try {
                             response?.errorBody()?.string() ?: "Error al actualizar el viaje"
                         } catch (e: Exception) {
                             "Error al actualizar el viaje"
                         }
-
-                        Toast.makeText(
-                            this@TripDetailActivity,
-                            errorMsg,
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(this@TripDetailActivity, errorMsg, Toast.LENGTH_LONG).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
                     btnAction.isEnabled = true
-                    Toast.makeText(
-                        this@TripDetailActivity,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(this@TripDetailActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }

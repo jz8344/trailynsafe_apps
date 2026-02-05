@@ -12,9 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.trailynapp.R
+import com.example.trailynapp.api.Hijo
 import com.example.trailynapp.api.RetrofitClient
 import com.example.trailynapp.utils.SessionManager
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import kotlinx.coroutines.launch
 
 class HijosFragment : Fragment() {
@@ -22,7 +23,7 @@ class HijosFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyView: TextView
-    private lateinit var fabAdd: FloatingActionButton
+    private lateinit var fabAdd: ExtendedFloatingActionButton
     private lateinit var sessionManager: SessionManager
     private lateinit var adapter: HijosAdapter
 
@@ -44,8 +45,9 @@ class HijosFragment : Fragment() {
         emptyView = view.findViewById(R.id.tvEmptyView)
         fabAdd = view.findViewById(R.id.fabAddHijo)
         
-        // Inicializar adapter vacío para evitar warnings
-        adapter = HijosAdapter(emptyList())
+        adapter = HijosAdapter(emptyList()) { hijo ->
+            showHijoDetalle(hijo)
+        }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
         
@@ -54,6 +56,11 @@ class HijosFragment : Fragment() {
         }
         
         loadHijos()
+    }
+
+    private fun showHijoDetalle(hijo: Hijo) {
+        val dialog = HijoDetalleDialog.newInstance(hijo)
+        dialog.show(childFragmentManager, "HijoDetalleDialog")
     }
     
     private fun loadHijos() {
@@ -72,8 +79,9 @@ class HijosFragment : Fragment() {
                         emptyView.visibility = View.VISIBLE
                         emptyView.text = "No tienes hijos registrados.\nPresiona + para agregar uno."
                     } else {
-                        // Actualizar adapter existente con nuevos datos
-                        adapter = HijosAdapter(hijos)
+                        adapter = HijosAdapter(hijos) { hijo ->
+                            showHijoDetalle(hijo)
+                        }
                         recyclerView.adapter = adapter
                     }
                 } else {

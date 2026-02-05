@@ -120,23 +120,44 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken() ?: return@launch
-                val response = RetrofitClient.apiService.getViajesDisponibles("Bearer $token")
-                
-                if (response.isSuccessful && response.body() != null) {
-                    val viajes = response.body()!! // ahora es List<ViajeDisponible>
+                // Llamada raw con debug=1 para que el servidor incluya detalles de depuración
+                val response = RetrofitClient.apiService.getViajesDisponiblesRaw("Bearer $token", 1)
 
-                    if (viajes.isEmpty()) {
-                        tvEmptyView.visibility = View.VISIBLE
-                        tvEmptyView.text = getString(R.string.no_trips_available)
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+                    // Log completo para depuración (aparece en Logcat)
+                    android.util.Log.i("MonitorFragment", "viajesDisponibles raw: ${body.toString()}")
+
+                    // El servidor devuelve { data: [...], debug: [...] } cuando debug=1
+                    val gson = com.google.gson.Gson()
+                    val viajesJson = if (body.isJsonObject && body.asJsonObject.has("data")) {
+                        body.asJsonObject.get("data")
                     } else {
-                        val adapter = ViajesDisponiblesAdapter(viajes) { viaje ->
-                            mostrarMapaParaViaje(viaje)
+                        body
+                    }
+
+                    try {
+                        val viajesArray = gson.fromJson(viajesJson, Array<ViajeDisponible>::class.java)
+                        val viajes = viajesArray.toList()
+
+                        if (viajes.isEmpty()) {
+                            tvEmptyView.visibility = View.VISIBLE
+                            tvEmptyView.text = getString(R.string.no_trips_available)
+                        } else {
+                            val adapter = ViajesDisponiblesAdapter(viajes) { viaje ->
+                                mostrarMapaParaViaje(viaje)
+                            }
+                            recyclerView.adapter = adapter
                         }
-                        recyclerView.adapter = adapter
+                    } catch (ex: Exception) {
+                        android.util.Log.e("MonitorFragment", "Error parseando viajes: ${ex.message}")
+                        tvEmptyView.visibility = View.VISIBLE
+                        tvEmptyView.text = getString(R.string.error_loading_trips)
                     }
                 } else {
                     tvEmptyView.visibility = View.VISIBLE
                     tvEmptyView.text = getString(R.string.error_loading_trips)
+                    android.util.Log.w("MonitorFragment", "viajesDisponibles failed: ${response.code()} - ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
                 tvEmptyView.visibility = View.VISIBLE

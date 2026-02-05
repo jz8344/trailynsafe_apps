@@ -1,20 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light">
+    android:background="@color/m3_surface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mis Hijos"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Toca un hijo para ver sus detalles y QR"
+                android:textColor="@color/m3_on_surface_variant"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewHijos"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="16dp"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="80dp"
             android:clipToPadding="false" />
 
         <TextView
@@ -24,7 +54,7 @@
             android:layout_gravity="center"
             android:text="No hay hijos registrados"
             android:textAlignment="center"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/m3_on_surface_variant"
             android:textSize="16sp"
             android:visibility="gone" />
 
@@ -33,18 +63,21 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:indeterminateTint="@color/m3_primary"
             android:visibility="gone" />
+
     </LinearLayout>
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddHijo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:contentDescription="Agregar hijo"
-        android:src="@drawable/ic_add"
-        app:tint="@color/white"
-        app:backgroundTint="@color/primary" />
+        android:layout_margin="20dp"
+        android:text="Agregar hijo"
+        android:textColor="@color/m3_on_primary"
+        app:icon="@drawable/ic_add"
+        app:iconTint="@color/m3_on_primary"
+        app:backgroundTint="@color/m3_primary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

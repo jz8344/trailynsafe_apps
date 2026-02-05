@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light"
+    android:background="@color/nav_background_dark"
     tools:context=".ui.navigation.NavigationActivity">
 
     <!-- Mapa en vista completa -->
@@ -15,55 +15,72 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Panel superior con información de ruta -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- BANNER DE MANIOBRA ESTILO ANDROID AUTO (ARRIBA) -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardRouteInfo"
+        android:id="@+id/cardManeuver"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
+        android:layout_margin="12dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="12dp"
+        app:cardBackgroundColor="@color/nav_card_dark"
         android:layout_gravity="top">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_maneuver_card">
 
-            <TextView
-                android:id="@+id/tvRutaNombre"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Ruta Viaje #5"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/primary" />
+            <!-- Icono grande de maniobra (flecha) -->
+            <FrameLayout
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:background="@drawable/bg_maneuver_card"
+                android:padding="12dp">
 
+                <ImageView
+                    android:id="@+id/ivManeuverIcon"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_nav_straight"
+                    android:contentDescription="Dirección"
+                    app:tint="@color/nav_accent_green" />
+            </FrameLayout>
+
+            <!-- Información de maniobra -->
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginStart="16dp">
 
+                <!-- Distancia a la maniobra -->
                 <TextView
-                    android:id="@+id/tvDistanciaTotal"
-                    android:layout_width="0dp"
+                    android:id="@+id/tvManeuverDistance"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="6.81 km"
-                    android:textSize="14sp"
-                    android:drawableStart="@drawable/ic_my_location"
-                    android:drawablePadding="4dp" />
+                    android:text="En 150 m"
+                    android:textSize="28sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/nav_text_white" />
 
+                <!-- Nombre de calle/parada -->
                 <TextView
-                    android:id="@+id/tvTiempoEstimado"
-                    android:layout_width="0dp"
+                    android:id="@+id/tvManeuverStreet"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="20 min"
-                    android:textSize="14sp"
-                    android:drawablePadding="4dp" />
+                    android:text="Parada #1"
+                    android:textSize="16sp"
+                    android:textColor="@color/nav_text_light"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:layout_marginTop="4dp" />
 
             </LinearLayout>
 
@@ -71,14 +88,17 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Panel inferior con instrucciones y acciones -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PANEL INFERIOR CON INFO DE RUTA Y ACCIONES -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardInstructions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="8dp"
+        android:layout_margin="12dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="12dp"
+        app:cardBackgroundColor="@color/nav_card_dark"
         android:layout_gravity="bottom">
 
         <LinearLayout
@@ -86,7 +106,58 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="20dp"
+            android:background="@drawable/bg_nav_panel">
+
+            <!-- Fila superior: Info de ruta -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <!-- Nombre de ruta -->
+                <TextView
+                    android:id="@+id/tvRutaNombre"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Ruta Viaje #5"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/nav_text_white" />
+
+                <!-- Distancia total -->
+                <TextView
+                    android:id="@+id/tvDistanciaTotal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="6.81 km"
+                    android:textSize="14sp"
+                    android:textColor="@color/nav_distance_blue"
+                    android:drawableStart="@drawable/ic_my_location"
+                    android:drawablePadding="6dp"
+                    android:drawableTint="@color/nav_distance_blue"
+                    android:layout_marginEnd="16dp" />
+
+                <!-- Tiempo estimado -->
+                <TextView
+                    android:id="@+id/tvTiempoEstimado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="20 min"
+                    android:textSize="14sp"
+                    android:textColor="@color/nav_accent_green" />
+
+            </LinearLayout>
+
+            <!-- Separador -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#33FFFFFF"
+                android:layout_marginBottom="16dp" />
 
             <!-- Signos vitales en tiempo real -->
             <LinearLayout
@@ -94,34 +165,46 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:padding="8dp"
-                android:background="@color/background_light"
-                android:layout_marginBottom="12dp">
+                android:background="@drawable/bg_maneuver_card"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp">
                 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="❤️"
-                    android:textSize="20sp" />
+                    android:textSize="24sp" />
                 
                 <TextView
                     android:id="@+id/tvHeartRate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:text="72 BPM"
-                    android:textSize="16sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="@color/primary" />
+                    android:textColor="@color/nav_text_white" />
                 
                 <TextView
                     android:id="@+id/tvHealthStatus"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginStart="12dp"
                     android:text="Normal"
-                    android:textSize="12sp" />
+                    android:textSize="14sp"
+                    android:textColor="@color/nav_accent_green" />
+
+                <!-- Distancia a parada actual -->
+                <TextView
+                    android:id="@+id/tvDistanceToStop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="450 m"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/nav_stop_orange" />
+                    
             </LinearLayout>
             
             <!-- Información de siguiente parada -->
@@ -129,10 +212,10 @@
                 android:id="@+id/tvNextStopInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="📍 Siguiente Parada (1/3)\nC. Flaviano Ramos Sur 33\n⏰ Hora estimada: 10:03\n📏 3.45 km"
-                android:textSize="14sp"
-                android:lineSpacingExtra="4dp"
-                android:textColor="@color/text_primary" />
+                android:text="📍 Siguiente Parada (1/3)\nC. Flaviano Ramos Sur 33\n⏰ Hora estimada: 10:03"
+                android:textSize="15sp"
+                android:lineSpacingExtra="6dp"
+                android:textColor="@color/nav_text_light" />
 
             <!-- Botón Comenzar Viaje (DEPRECADO - auto-inicio) -->
             <Button
@@ -151,13 +234,13 @@
             <Button
                 android:id="@+id/btnCompleteStop"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
+                android:layout_height="64dp"
                 android:layout_marginTop="16dp"
                 android:text="✓ Completar Parada"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white"
-                android:background="@drawable/gradient_primary"
+                android:textColor="@color/nav_background_dark"
+                android:backgroundTint="@color/nav_accent_green"
                 android:visibility="gone" />
 
         </LinearLayout>
@@ -173,8 +256,8 @@
         android:layout_gravity="end|center_vertical"
         android:src="@drawable/ic_my_location"
         android:contentDescription="Mi ubicación"
-        app:tint="@android:color/white"
-        app:backgroundTint="@color/primary" />
+        app:tint="@color/nav_text_white"
+        app:backgroundTint="@color/nav_maneuver_bg" />
 
     <!-- FAB Recentrar -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -186,8 +269,8 @@
         android:layout_marginTop="80dp"
         android:src="@drawable/ic_arrow_forward"
         android:contentDescription="Recentrar en ruta"
-        app:tint="@android:color/white"
-        app:backgroundTint="@color/primary"
+        app:tint="@color/nav_text_white"
+        app:backgroundTint="@color/nav_maneuver_bg"
         app:fabSize="mini" />
     
     <!-- FAB Signos Vitales -->
@@ -200,8 +283,8 @@
         android:layout_marginTop="140dp"
         android:text="⌚"
         android:contentDescription="Signos vitales"
-        app:tint="@android:color/white"
-        app:backgroundTint="@color/primary"
+        app:tint="@color/nav_text_white"
+        app:backgroundTint="@color/nav_maneuver_bg"
         app:fabSize="mini" />
 
     <!-- ProgressBar -->

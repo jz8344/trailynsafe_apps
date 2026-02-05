@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/m3_surface_container_high"
     app:strokeWidth="0dp">
 
     <LinearLayout
@@ -15,15 +20,22 @@
         android:padding="16dp"
         android:gravity="center_vertical">
 
-        <ImageView
+        <!-- Avatar -->
+        <FrameLayout
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:padding="12dp"
-            android:background="@drawable/circle_shape"
-            android:backgroundTint="@color/primary_light"
-            android:src="@drawable/ic_person"
-            app:tint="@color/primary" />
+            android:background="@drawable/bg_avatar_m3">
 
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_person"
+                app:tint="@color/m3_primary" />
+
+        </FrameLayout>
+
+        <!-- Info -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -36,7 +48,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Nombre del hijo"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/m3_on_surface"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -46,23 +58,58 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="Escuela"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp" />
+                android:textColor="@color/m3_on_surface_variant"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
 
-            <TextView
-                android:id="@+id/tvEdad"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="8 años"
-                android:textColor="@color/text_hint"
-                android:textSize="13sp" />
+                android:orientation="horizontal"
+                android:layout_marginTop="6dp">
+
+                <!-- Chip Grado -->
+                <TextView
+                    android:id="@+id/tvGrado"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3° Grado"
+                    android:textColor="@color/m3_on_primary_container"
+                    android:textSize="12sp"
+                    android:background="@drawable/bg_chip_m3"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp" />
+
+                <!-- Chip Grupo -->
+                <TextView
+                    android:id="@+id/tvGrupo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Grupo A"
+                    android:textColor="@color/m3_on_primary_container"
+                    android:textSize="12sp"
+                    android:background="@drawable/bg_chip_m3"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:layout_marginStart="8dp" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
+        <!-- QR Icon indicator -->
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_arrow_forward"
-            app:tint="@color/text_hint" />
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_qr_code"
+            app:tint="@color/m3_primary"
+            android:alpha="0.8" />
+
     </LinearLayout>
+
 </com.google.android.material.card.MaterialCardView>

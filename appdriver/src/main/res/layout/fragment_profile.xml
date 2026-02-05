@@ -1,88 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_light">
+    android:background="@color/m3_surface">
 
-    <!-- Header con gradiente -->
-    <View
-        android:id="@+id/headerBackground"
-        android:layout_width="match_parent"
-        android:layout_height="220dp"
-        android:background="@drawable/gradient_primary"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Avatar circular -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/avatarCard"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_marginTop="40dp"
-        app:cardCornerRadius="50dp"
-        app:cardElevation="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/white"
-            android:contentDescription="@string/app_name"
-            android:padding="20dp"
-            android:src="@drawable/ic_driver"
-            app:tint="@color/primary" />
-    </androidx.cardview.widget.CardView>
-
-    <!-- Nombre del chofer -->
-    <TextView
-        android:id="@+id/tvNombreChofer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Cargando..."
-        android:textColor="@color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/avatarCard" />
-
-    <!-- Email del chofer -->
-    <TextView
-        android:id="@+id/tvEmailChofer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text=""
-        android:textColor="@color/white"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvNombreChofer" />
-
-    <!-- ScrollView para el contenido -->
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerBackground">
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="20dp">
 
-            <!-- Card de información -->
-            <androidx.cardview.widget.CardView
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- HEADER -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mi Perfil"
+                android:textColor="@color/m3_on_surface"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="24dp" />
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- AVATAR Y NOMBRE -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/m3_surface_container_high"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:gravity="center">
+
+                    <!-- Avatar circular -->
+                    <FrameLayout
+                        android:layout_width="96dp"
+                        android:layout_height="96dp">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            app:cardCornerRadius="48dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="@color/m3_primary_container"
+                            app:strokeWidth="3dp"
+                            app:strokeColor="@color/m3_primary">
+
+                            <ImageView
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="24dp"
+                                android:src="@drawable/ic_driver"
+                                app:tint="@color/m3_on_primary_container" />
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/tvNombreChofer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Conductor"
+                        android:textColor="@color/m3_on_surface"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvEmailChofer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text=""
+                        android:textColor="@color/m3_on_surface_variant"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- INFORMACIÓN DEL PERFIL -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/m3_surface_container_high"
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -91,76 +115,135 @@
                     android:padding="20dp">
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Información del Perfil"
-                        android:textColor="@color/text_primary"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
+                        android:text="Información"
+                        android:textColor="@color/m3_on_surface"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="16dp" />
 
                     <!-- Teléfono -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="16dp">
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginEnd="12dp"
-                            android:contentDescription="@string/app_name"
-                            android:src="@drawable/ic_phone"
-                            app:tint="@color/primary" />
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_chip_m3">
 
-                        <TextView
-                            android:id="@+id/tvTelefono"
-                            android:layout_width="wrap_content"
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_phone"
+                                app:tint="@color/m3_primary" />
+
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="N/A"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="16sp" />
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Teléfono"
+                                android:textColor="@color/m3_on_surface_variant"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvTelefono"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="N/A"
+                                android:textColor="@color/m3_on_surface"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:layout_marginTop="2dp" />
+
+                        </LinearLayout>
+
                     </LinearLayout>
 
                     <!-- Licencia -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
 
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:layout_marginEnd="12dp"
-                            android:contentDescription="@string/app_name"
-                            android:src="@drawable/ic_card"
-                            app:tint="@color/primary" />
+                        <FrameLayout
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:background="@drawable/bg_chip_m3">
 
-                        <TextView
-                            android:id="@+id/tvLicencia"
-                            android:layout_width="wrap_content"
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_card"
+                                app:tint="@color/m3_primary" />
+
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:text="Licencia Activa"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="16sp" />
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Licencia"
+                                android:textColor="@color/m3_on_surface_variant"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvLicencia"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Licencia Activa"
+                                android:textColor="@color/m3_success"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:layout_marginTop="2dp" />
+
+                        </LinearLayout>
+
                     </LinearLayout>
 
                 </LinearLayout>
-            </androidx.cardview.widget.CardView>
+            </com.google.android.material.card.MaterialCardView>
 
-            <!-- Botón Cerrar Sesión -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- BOTÓN CERRAR SESIÓN -->
+            <!-- ═══════════════════════════════════════════════════════ -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
+                android:layout_marginTop="8dp"
                 android:text="Cerrar Sesión"
+                android:textColor="@color/m3_on_surface"
                 android:textSize="16sp"
-                app:backgroundTint="@color/error"
-                app:cornerRadius="12dp"
+                android:textStyle="bold"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 app:icon="@drawable/ic_logout"
                 app:iconGravity="textStart"
-                app:iconPadding="12dp" />
+                app:iconTint="@color/m3_error"
+                app:cornerRadius="16dp"
+                app:strokeColor="@color/m3_outline_variant"
+                app:strokeWidth="1dp" />
 
         </LinearLayout>
     </ScrollView>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/m3_surface_variant"
+    android:padding="24dp">
+
+    <!-- Header con avatar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_marginBottom="20dp">
+
+        <FrameLayout
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/bg_avatar_m3">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_person"
+                app:tint="@color/m3_primary" />
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/tvNombreHijo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Nombre del Hijo"
+            android:textColor="@color/m3_on_surface"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textAlignment="center" />
+
+        <TextView
+            android:id="@+id/tvEscuelaHijo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Escuela"
+            android:textColor="@color/m3_on_surface_variant"
+            android:textSize="14sp"
+            android:textAlignment="center" />
+
+    </LinearLayout>
+
+    <!-- Chips info -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:id="@+id/tvGradoChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3° Grado"
+            android:textColor="@color/m3_on_primary_container"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_chip_m3"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp" />
+
+        <TextView
+            android:id="@+id/tvGrupoChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Grupo A"
+            android:textColor="@color/m3_on_primary_container"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:background="@drawable/bg_chip_m3"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_marginStart="12dp" />
+
+    </LinearLayout>
+
+    <!-- QR Code -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="@color/white">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Código QR de Identificación"
+                android:textColor="@color/m3_surface"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <ImageView
+                android:id="@+id/ivQrCode"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:scaleType="fitCenter"
+                android:background="@color/white" />
+
+            <TextView
+                android:id="@+id/tvQrId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="hijo_123"
+                android:textColor="@color/m3_outline"
+                android:textSize="12sp"
+                android:fontFamily="monospace" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Botón Descargar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDescargarCredencial"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:text="Descargar Credencial"
+        android:textColor="@color/m3_on_primary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:icon="@drawable/ic_download"
+        app:iconGravity="textStart"
+        app:iconTint="@color/m3_on_primary"
+        app:cornerRadius="16dp"
+        app:backgroundTint="@color/m3_primary" />
+
+    <!-- Botón Cerrar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCerrar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:text="Cerrar"
+        android:textColor="@color/m3_on_surface_variant"
+        android:textSize="14sp"
+        style="@style/Widget.Material3.Button.TextButton"
+        app:backgroundTint="@android:color/transparent" />
+
+</LinearLayout>
