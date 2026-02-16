@@ -142,6 +142,8 @@ class WearOSHealthDialog : DialogFragment() {
         }
     }
     
+
+    
     private fun updateHealthUI() {
         if (!isAdded) return
         
