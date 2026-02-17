@@ -2,6 +2,7 @@ package com.example.trailynapp.fragments
 
 import android.content.Context
 import android.hardware.Sensor
+import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Geocoder
@@ -9,6 +10,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
+import android.view.animation.RotateAnimation
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -28,6 +31,9 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.material.button.MaterialButton
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -115,7 +121,7 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
             uiSettings.isZoomControlsEnabled = true
             uiSettings.isCompassEnabled = true
             uiSettings.isMyLocationButtonEnabled = true
-            
+
             try {
                 isMyLocationEnabled = true
             } catch (e: SecurityException) {
@@ -409,100 +415,115 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
                     val hijoSeleccionado = hijos[which]
                     sessionManager.saveSelectedHijoId(hijoSeleccionado.id)
                     Toast.makeText(
-                        requireContext(),
-                        "Hijo seleccionado: ${hijoSeleccionado.nombre}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                                    requireContext(),
+                                    "Hijo seleccionado: ${hijoSeleccionado.nombre}",
+                                    Toast.LENGTH_SHORT
+                            )
+                            .show()
+                }
                 .setCancelable(true)
                 .show()
-        }
     }
-    
+
     override fun onSensorChanged(event: SensorEvent?) {
         if (event == null) return
-        
+
         when (event.sensor.type) {
             Sensor.TYPE_ACCELEROMETER -> {
-                System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.size)
+                System.arraycopy(
+                        event.values,
+                        0,
+                        accelerometerReading,
+                        0,
+                        accelerometerReading.size
+                )
             }
             Sensor.TYPE_MAGNETIC_FIELD -> {
                 System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
             }
         }
-        
+
         updateOrientationAndRotateArrow()
     }
-    
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-    }
-    
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+
     private fun updateOrientationAndRotateArrow() {
         SensorManager.getRotationMatrix(
-            rotationMatrix,
-            null,
-            accelerometerReading,
-            magnetometerReading
+                rotationMatrix,
+                null,
+                accelerometerReading,
+                magnetometerReading
         )
-        
+
         SensorManager.getOrientation(rotationMatrix, orientationAngles)
-        
+
         currentAzimuth = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
-        
+
         if (currentAzimuth < 0) {
             currentAzimuth += 360f
         }
-        
+
         selectedLocation?.let { destination ->
-            googleMap?.myLocation?.let { myLoc ->
+            val map = googleMap ?: return
+            if (!map.isMyLocationEnabled) return
+
+            try {
+                val myLoc = map.myLocation ?: return
                 val currentLocation = LatLng(myLoc.latitude, myLoc.longitude)
                 val bearing = calculateBearing(currentLocation, destination)
-                
+
                 var rotation = bearing - currentAzimuth
-                
+
                 if (rotation < 0) {
                     rotation += 360f
                 }
                 if (rotation > 360) {
                     rotation -= 360f
                 }
-                
+
                 rotateArrow(rotation)
+            } catch (e: Exception) {
+                // Ignorar error si la ubicación no está disponible
             }
         }
     }
-    
+
     private fun calculateBearing(from: LatLng, to: LatLng): Float {
         val lat1 = Math.toRadians(from.latitude)
         val lon1 = Math.toRadians(from.longitude)
         val lat2 = Math.toRadians(to.latitude)
         val lon2 = Math.toRadians(to.longitude)
-        
+
         val dLon = lon2 - lon1
-        
+
         val y = sin(dLon) * cos(lat2)
         val x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
-        
+
         var bearing = Math.toDegrees(atan2(y, x))
         bearing = (bearing + 360) % 360
-        
+
         return bearing.toFloat()
     }
-    
+
     private fun rotateArrow(targetRotation: Float) {
-        val rotateAnimation = RotateAnimation(
-            currentRotation,
-            targetRotation,
-            Animation.RELATIVE_TO_SELF, 0.5f,
-            Animation.RELATIVE_TO_SELF, 0.5f
-        )
-        
+        val rotateAnimation =
+                RotateAnimation(
+                        currentRotation,
+                        targetRotation,
+                        Animation.RELATIVE_TO_SELF,
+                        0.5f,
+                        Animation.RELATIVE_TO_SELF,
+                        0.5f
+                )
+
         rotateAnimation.duration = 200
         rotateAnimation.fillAfter = true
-        
+
         navigationArrow.startAnimation(rotateAnimation)
         currentRotation = targetRotation
     }
-    
+
     override fun onResume() {
         super.onResume()
         accelerometer?.also { acc ->
@@ -512,10 +533,9 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
             sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_UI)
         }
     }
-    
+
     override fun onPause() {
         super.onPause()
         sensorManager.unregisterListener(this)
     }
 }
-```
