@@ -8,11 +8,21 @@
     android:background="@color/m3_surface"
     tools:context=".MainActivity">
 
+    <!-- Top App Bar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/m3_surface_container_high"
+        android:theme="@style/ThemeOverlay.MaterialComponents.ActionBar"
+        app:title="TrailynSafe" />
+
     <!-- Fragment Container -->
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
         android:layout_marginBottom="56dp" />
 
     <!-- Bottom Navigation -->
