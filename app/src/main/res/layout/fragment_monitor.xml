@@ -21,15 +21,14 @@
         android:layout_marginBottom="40dp"
         android:visibility="gone">
 
-        <!-- Pin de ubicación -->
+        <!-- Flecha de navegación -->
         <ImageView
             android:id="@+id/centerMarker"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
             android:layout_gravity="center_horizontal|bottom"
             android:contentDescription="@string/location_pin"
-            android:src="@android:drawable/ic_menu_mylocation"
-            android:tint="@color/primary" />
+            android:src="@drawable/ic_navigation_arrow" />
     </FrameLayout>
 
     <!-- Bottom Sheet con información -->

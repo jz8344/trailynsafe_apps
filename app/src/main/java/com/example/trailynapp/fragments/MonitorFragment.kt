@@ -1,11 +1,15 @@
 package com.example.trailynapp.fragments
 
-import android.location.Address
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.location.Geocoder
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -27,9 +31,8 @@ import com.google.android.material.button.MaterialButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
-class MonitorFragment : Fragment(), OnMapReadyCallback {
+class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -41,19 +44,30 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
     private lateinit var bottomSheet: LinearLayout
     private lateinit var centerPinContainer: View
     private lateinit var layoutViajesList: LinearLayout
-    
+    private lateinit var navigationArrow: ImageView
+
     private var googleMap: GoogleMap? = null
     private lateinit var sessionManager: SessionManager
     private lateinit var geocoder: Geocoder
-    
+
     private var selectedLocation: LatLng? = null
     private var selectedAddress: String? = null
     private var selectedViaje: ViajeDisponible? = null
 
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var magnetometer: Sensor? = null
+    private val accelerometerReading = FloatArray(3)
+    private val magnetometerReading = FloatArray(3)
+    private val rotationMatrix = FloatArray(9)
+    private val orientationAngles = FloatArray(3)
+    private var currentAzimuth = 0f
+    private var currentRotation = 0f
+
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+            inflater: LayoutInflater,
+            container: ViewGroup?,
+            savedInstanceState: Bundle?
     ): View? {
         return inflater.inflate(R.layout.fragment_monitor, container, false)
     }
@@ -64,6 +78,10 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
         sessionManager = SessionManager(requireContext())
         geocoder = Geocoder(requireContext())
 
+        sensorManager = requireContext().getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+
         recyclerView = view.findViewById(R.id.recyclerViewViajes)
         progressBar = view.findViewById(R.id.progressBar)
         tvEmptyView = view.findViewById(R.id.tvEmptyView)
@@ -73,6 +91,7 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
         btnCancelar = view.findViewById(R.id.btnCancelar)
         bottomSheet = view.findViewById(R.id.bottomSheet)
         centerPinContainer = view.findViewById(R.id.centerPinContainer)
+        navigationArrow = view.findViewById(R.id.centerMarker)
         layoutViajesList = view.findViewById(R.id.layoutViajesList)
 
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -82,13 +101,9 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
         mapFragment?.getMapAsync(this)
 
         // Botones
-        btnCancelar.setOnClickListener {
-            ocultarMapa()
-        }
+        btnCancelar.setOnClickListener { ocultarMapa() }
 
-        btnConfirmar.setOnClickListener {
-            confirmarViaje()
-        }
+        btnConfirmar.setOnClickListener { confirmarViaje() }
 
         // Cargar los viajes disponibles
         cargarViajes()
@@ -101,14 +116,16 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
             uiSettings.isCompassEnabled = true
             uiSettings.isMyLocationButtonEnabled = true
             
-            // Listener cuando el mapa se mueve
+            try {
+                isMyLocationEnabled = true
+            } catch (e: SecurityException) {
+                android.util.Log.e("MonitorFragment", "Permiso de ubicación no otorgado")
+            }
+
             setOnCameraIdleListener {
                 val center = cameraPosition.target
                 selectedLocation = center
                 obtenerDireccion(center)
-                
-                // El PIN ya está visible con centerPinContainer (ImageView en el centro)
-                // No necesitamos agregar marcador programáticamente
             }
         }
     }
@@ -126,43 +143,60 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
                 if (response.isSuccessful && response.body() != null) {
                     val body = response.body()!!
                     // Log completo para depuración (aparece en Logcat)
-                    android.util.Log.i("MonitorFragment", "viajesDisponibles raw: ${body.toString()}")
+                    android.util.Log.i(
+                            "MonitorFragment",
+                            "viajesDisponibles raw: ${body.toString()}"
+                    )
 
                     // El servidor devuelve { data: [...], debug: [...] } cuando debug=1
                     val gson = com.google.gson.Gson()
-                    val viajesJson = if (body.isJsonObject && body.asJsonObject.has("data")) {
-                        body.asJsonObject.get("data")
-                    } else {
-                        body
-                    }
+                    val viajesJson =
+                            if (body.isJsonObject && body.asJsonObject.has("data")) {
+                                body.asJsonObject.get("data")
+                            } else {
+                                body
+                            }
 
                     try {
-                        val viajesArray = gson.fromJson(viajesJson, Array<ViajeDisponible>::class.java)
+                        val viajesArray =
+                                gson.fromJson(viajesJson, Array<ViajeDisponible>::class.java)
                         val viajes = viajesArray.toList()
 
                         if (viajes.isEmpty()) {
                             tvEmptyView.visibility = View.VISIBLE
                             tvEmptyView.text = getString(R.string.no_trips_available)
                         } else {
-                            val adapter = ViajesDisponiblesAdapter(viajes) { viaje ->
-                                mostrarMapaParaViaje(viaje)
-                            }
+                            val adapter =
+                                    ViajesDisponiblesAdapter(viajes) { viaje ->
+                                        mostrarMapaParaViaje(viaje)
+                                    }
                             recyclerView.adapter = adapter
                         }
                     } catch (ex: Exception) {
-                        android.util.Log.e("MonitorFragment", "Error parseando viajes: ${ex.message}")
+                        android.util.Log.e(
+                                "MonitorFragment",
+                                "Error parseando viajes: ${ex.message}"
+                        )
                         tvEmptyView.visibility = View.VISIBLE
                         tvEmptyView.text = getString(R.string.error_loading_trips)
                     }
                 } else {
                     tvEmptyView.visibility = View.VISIBLE
                     tvEmptyView.text = getString(R.string.error_loading_trips)
-                    android.util.Log.w("MonitorFragment", "viajesDisponibles failed: ${response.code()} - ${response.errorBody()?.string()}")
+                    android.util.Log.w(
+                            "MonitorFragment",
+                            "viajesDisponibles failed: ${response.code()} - ${response.errorBody()?.string()}"
+                    )
                 }
             } catch (e: Exception) {
                 tvEmptyView.visibility = View.VISIBLE
                 tvEmptyView.text = "Error: ${e.message}"
-                Toast.makeText(requireContext(), getString(R.string.error_loading_trips), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                                requireContext(),
+                                getString(R.string.error_loading_trips),
+                                Toast.LENGTH_SHORT
+                        )
+                        .show()
             } finally {
                 progressBar.visibility = View.GONE
             }
@@ -171,23 +205,18 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
 
     private fun mostrarMapaParaViaje(viaje: ViajeDisponible) {
         selectedViaje = viaje
-        
+
         // Ocultar lista y mostrar mapa
         layoutViajesList.visibility = View.GONE
         bottomSheet.visibility = View.VISIBLE
         centerPinContainer.visibility = View.VISIBLE
-        
+
         // Centrar mapa en la escuela del viaje
         googleMap?.let { map ->
             viaje.escuela?.let { escuela ->
                 if (escuela.latitud != null && escuela.longitud != null) {
-                    val escuelaLocation = LatLng(
-                        escuela.latitud,
-                        escuela.longitud
-                    )
-                    map.animateCamera(
-                        CameraUpdateFactory.newLatLngZoom(escuelaLocation, 15f)
-                    )
+                    val escuelaLocation = LatLng(escuela.latitud, escuela.longitud)
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(escuelaLocation, 15f))
                 }
             }
         }
@@ -209,15 +238,13 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
         lifecycleScope.launch {
             try {
                 // minSdk = 34, siempre usamos la nueva API
-                geocoder.getFromLocation(
-                    location.latitude,
-                    location.longitude,
-                    1
-                ) { addresses ->
+                geocoder.getFromLocation(location.latitude, location.longitude, 1) { addresses ->
                     activity?.runOnUiThread {
                         progressBarAddress.visibility = View.GONE
                         if (addresses.isNotEmpty()) {
-                            val direccion = addresses[0].getAddressLine(0) ?: getString(R.string.address_not_available)
+                            val direccion =
+                                    addresses[0].getAddressLine(0)
+                                            ?: getString(R.string.address_not_available)
                             selectedAddress = direccion
                             tvDireccion.text = getString(R.string.address_prefix, direccion)
                         } else {
@@ -234,18 +261,24 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
 
     private fun confirmarViaje() {
         if (selectedLocation == null || selectedAddress == null || selectedViaje == null) {
-            Toast.makeText(requireContext(), getString(R.string.select_valid_location), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                            requireContext(),
+                            getString(R.string.select_valid_location),
+                            Toast.LENGTH_SHORT
+                    )
+                    .show()
             return
         }
 
         val location = selectedLocation ?: return
         val address = selectedAddress ?: return
         val viaje = selectedViaje ?: return
-        
+
         // Obtener primer hijo (o mostrar diálogo para seleccionar)
         val hijoId = obtenerHijoId()
         if (hijoId == null) {
-            Toast.makeText(requireContext(), "No tienes hijos registrados", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "No tienes hijos registrados", Toast.LENGTH_SHORT)
+                    .show()
             return
         }
 
@@ -257,42 +290,42 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken() ?: throw Exception("No autenticado")
-                
-                val request = com.example.trailynapp.api.ConfirmacionRequest(
-                    hijo_id = hijoId,
-                    direccion_recogida = address,
-                    latitud = location.latitude,
-                    longitud = location.longitude,
-                    referencia = null
-                )
-                
-                val response = RetrofitClient.apiService.confirmarViaje(
-                    viajeId = viaje.id,
-                    token = "Bearer $token",
-                    confirmacion = request
-                )
-                
+
+                val request =
+                        com.example.trailynapp.api.ConfirmacionRequest(
+                                hijo_id = hijoId,
+                                direccion_recogida = address,
+                                latitud = location.latitude,
+                                longitud = location.longitude,
+                                referencia = null
+                        )
+
+                val response =
+                        RetrofitClient.apiService.confirmarViaje(
+                                viajeId = viaje.id,
+                                token = "Bearer $token",
+                                confirmacion = request
+                        )
+
                 withContext(Dispatchers.Main) {
                     progressBar.visibility = View.GONE
                     btnConfirmar.isEnabled = true
                     btnConfirmar.text = "Confirmar"
-                    
+
                     if (response.isSuccessful && response.body() != null) {
                         val result = response.body()!!
-                        Toast.makeText(
-                            requireContext(),
-                            "✓ ${result.message}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(requireContext(), "✓ ${result.message}", Toast.LENGTH_LONG)
+                                .show()
                         ocultarMapa()
                         cargarViajes() // Recargar lista
                     } else {
                         val errorBody = response.errorBody()?.string()
                         Toast.makeText(
-                            requireContext(),
-                            "Error: ${errorBody ?: "No se pudo confirmar"}",
-                            Toast.LENGTH_LONG
-                        ).show()
+                                        requireContext(),
+                                        "Error: ${errorBody ?: "No se pudo confirmar"}",
+                                        Toast.LENGTH_LONG
+                                )
+                                .show()
                     }
                 }
             } catch (e: Exception) {
@@ -300,45 +333,52 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
                     progressBar.visibility = View.GONE
                     btnConfirmar.isEnabled = true
                     btnConfirmar.text = "Confirmar"
-                    Toast.makeText(
-                        requireContext(),
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT)
+                            .show()
                 }
             }
         }
     }
-    
+
     private fun obtenerHijoId(): Int? {
         // Obtener hijo previamente seleccionado de SharedPreferences
         val savedHijoId = sessionManager.getSelectedHijoId()
         if (savedHijoId != -1) {
             return savedHijoId
         }
-        
+
         // Si no hay hijo guardado, cargar desde API y mostrar selector
         cargarYSeleccionarHijo()
         return null // Retornar null para que el flujo espere selección
     }
-    
+
     private fun cargarYSeleccionarHijo() {
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken() ?: return@launch
                 val response = RetrofitClient.apiService.obtenerHijos("Bearer $token")
-                
+
                 if (response.isSuccessful && response.body() != null) {
                     val hijos = response.body()!!
-                    
+
                     when {
                         hijos.isEmpty() -> {
-                            Toast.makeText(requireContext(), "No tienes hijos registrados", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                            requireContext(),
+                                            "No tienes hijos registrados",
+                                            Toast.LENGTH_LONG
+                                    )
+                                    .show()
                         }
                         hijos.size == 1 -> {
                             // Si solo tiene un hijo, guardarlo automáticamente
                             sessionManager.saveSelectedHijoId(hijos[0].id)
-                            Toast.makeText(requireContext(), "Hijo seleccionado: ${hijos[0].nombre}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                            requireContext(),
+                                            "Hijo seleccionado: ${hijos[0].nombre}",
+                                            Toast.LENGTH_SHORT
+                                    )
+                                    .show()
                         }
                         else -> {
                             // Mostrar selector si tiene múltiples hijos
@@ -346,29 +386,136 @@ class MonitorFragment : Fragment(), OnMapReadyCallback {
                         }
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error al cargar hijos", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error al cargar hijos", Toast.LENGTH_SHORT)
+                            .show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Error de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                                requireContext(),
+                                "Error de conexión: ${e.message}",
+                                Toast.LENGTH_SHORT
+                        )
+                        .show()
+            }
+        }
+    }
+
+    private fun mostrarSelectorHijos(hijos: List<com.example.trailynapp.api.Hijo>) {
+        val nombres = hijos.map { "${it.nombre} - ${it.grado}° ${it.grupo}" }.toTypedArray()
+
+        android.app.AlertDialog.Builder(requireContext())
+                .setTitle("Selecciona un hijo")
+                .setItems(nombres) { _, which ->
+                    val hijoSeleccionado = hijos[which]
+                    sessionManager.saveSelectedHijoId(hijoSeleccionado.id)
+                    Toast.makeText(
+                        requireContext(),
+                        "Hijo seleccionado: ${hijoSeleccionado.nombre}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                .setCancelable(true)
+                .show()
+        }
+    }
+    
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event == null) return
+        
+        when (event.sensor.type) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.size)
+            }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
+            }
+        }
+        
+        updateOrientationAndRotateArrow()
+    }
+    
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+    
+    private fun updateOrientationAndRotateArrow() {
+        SensorManager.getRotationMatrix(
+            rotationMatrix,
+            null,
+            accelerometerReading,
+            magnetometerReading
+        )
+        
+        SensorManager.getOrientation(rotationMatrix, orientationAngles)
+        
+        currentAzimuth = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+        
+        if (currentAzimuth < 0) {
+            currentAzimuth += 360f
+        }
+        
+        selectedLocation?.let { destination ->
+            googleMap?.myLocation?.let { myLoc ->
+                val currentLocation = LatLng(myLoc.latitude, myLoc.longitude)
+                val bearing = calculateBearing(currentLocation, destination)
+                
+                var rotation = bearing - currentAzimuth
+                
+                if (rotation < 0) {
+                    rotation += 360f
+                }
+                if (rotation > 360) {
+                    rotation -= 360f
+                }
+                
+                rotateArrow(rotation)
             }
         }
     }
     
-    private fun mostrarSelectorHijos(hijos: List<com.example.trailynapp.api.Hijo>) {
-        val nombres = hijos.map { "${it.nombre} - ${it.grado}° ${it.grupo}" }.toTypedArray()
+    private fun calculateBearing(from: LatLng, to: LatLng): Float {
+        val lat1 = Math.toRadians(from.latitude)
+        val lon1 = Math.toRadians(from.longitude)
+        val lat2 = Math.toRadians(to.latitude)
+        val lon2 = Math.toRadians(to.longitude)
         
-        android.app.AlertDialog.Builder(requireContext())
-            .setTitle("Selecciona un hijo")
-            .setItems(nombres) { _, which ->
-                val hijoSeleccionado = hijos[which]
-                sessionManager.saveSelectedHijoId(hijoSeleccionado.id)
-                Toast.makeText(
-                    requireContext(),
-                    "Hijo seleccionado: ${hijoSeleccionado.nombre}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            .setCancelable(true)
-            .show()
+        val dLon = lon2 - lon1
+        
+        val y = sin(dLon) * cos(lat2)
+        val x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+        
+        var bearing = Math.toDegrees(atan2(y, x))
+        bearing = (bearing + 360) % 360
+        
+        return bearing.toFloat()
+    }
+    
+    private fun rotateArrow(targetRotation: Float) {
+        val rotateAnimation = RotateAnimation(
+            currentRotation,
+            targetRotation,
+            Animation.RELATIVE_TO_SELF, 0.5f,
+            Animation.RELATIVE_TO_SELF, 0.5f
+        )
+        
+        rotateAnimation.duration = 200
+        rotateAnimation.fillAfter = true
+        
+        navigationArrow.startAnimation(rotateAnimation)
+        currentRotation = targetRotation
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.also { acc ->
+            sensorManager.registerListener(this, acc, SensorManager.SENSOR_DELAY_UI)
+        }
+        magnetometer?.also { mag ->
+            sensorManager.registerListener(this, mag, SensorManager.SENSOR_DELAY_UI)
+        }
+    }
+    
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
     }
 }
+```

@@ -5,18 +5,30 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     
-    <!-- Sombra del pin -->
+    <!-- Sombra del pin (más prominente) -->
     <path
-        android:fillColor="#40000000"
-        android:pathData="M12,22c-0.5,0 -1,-0.2 -1.4,-0.6C9.8,20.6 4,14.2 4,10c0,-4.4 3.6,-8 8,-8s8,3.6 8,8c0,4.2 -5.8,10.6 -6.6,11.4C13,21.8 12.5,22 12,22z" />
+        android:fillColor="#60000000"
+        android:pathData="M12,22.5c-0.6,0 -1.2,-0.25 -1.6,-0.7C9.5,21 3.5,14.3 3.5,10c0,-4.7 3.8,-8.5 8.5,-8.5s8.5,3.8 8.5,8.5c0,4.3 -6,11 -6.9,11.8C13.2,22.25 12.6,22.5 12,22.5z" />
+    
+    <!-- Borde del pin (blanco) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,2c-4.4,0 -8,3.6 -8,8c0,4.2 5.8,10.6 6.6,11.4C11,21.8 11.5,22 12,22s1,-0.2 1.4,-0.6C14.2,20.6 20,14.2 20,10C20,5.6 16.4,2 12,2zM12,20.8c-0.3,0 -0.6,-0.1 -0.8,-0.4C10.5,19.7 5,13.6 5,10c0,-3.9 3.1,-7 7,-7s7,3.1 7,7c0,3.6 -5.5,9.7 -6.2,10.4C12.6,20.7 12.3,20.8 12,20.8z" />
     
     <!-- Pin principal -->
     <path
         android:fillColor="@color/primary"
-        android:pathData="M12,2c-4.4,0 -8,3.6 -8,8c0,4.2 5.8,10.6 6.6,11.4C11,21.8 11.5,22 12,22s1,-0.2 1.4,-0.6C14.2,20.6 20,14.2 20,10C20,5.6 16.4,2 12,2zM12,13c-1.7,0 -3,-1.3 -3,-3s1.3,-3 3,-3s3,1.3 3,3S13.7,13 12,13z" />
+        android:pathData="M12,3c-3.9,0 -7,3.1 -7,7c0,3.6 5.5,9.7 6.2,10.4c0.2,0.3 0.5,0.4 0.8,0.4s0.6,-0.1 0.8,-0.4C13.5,19.7 19,13.6 19,10C19,6.1 15.9,3 12,3zM12,13c-1.7,0 -3,-1.3 -3,-3s1.3,-3 3,-3s3,1.3 3,3S13.7,13 12,13z" />
     
     <!-- Círculo interior blanco -->
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M12,7c-1.7,0 -3,1.3 -3,3s1.3,3 3,3s3,-1.3 3,-3S13.7,7 12,7z" />
+    
+    <!-- Punto central -->
+    <circle
+        android:cx="12"
+        android:cy="10"
+        android:r="1.2"
+        android:fillColor="@color/primary" />
 </vector>

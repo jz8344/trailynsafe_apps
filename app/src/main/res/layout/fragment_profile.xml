@@ -393,13 +393,16 @@
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
+
                         <TextView
+                            android:id="@+id/tvThemeStatus"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Actualmente activo"
                             android:textColor="@color/m3_on_surface_variant"
                             android:textSize="13sp"
                             android:layout_marginTop="2dp" />
+
 
                     </LinearLayout>
 

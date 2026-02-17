@@ -15,6 +15,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Flecha de Navegación Central -->
+    <ImageView
+        android:id="@+id/navigationArrow"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_navigation_arrow"
+        android:elevation="10dp"
+        android:contentDescription="Flecha de navegación" />
+
     <!-- ═══════════════════════════════════════════════════════════════ -->
     <!-- BANNER DE MANIOBRA ESTILO ANDROID AUTO (ARRIBA) -->
     <!-- ═══════════════════════════════════════════════════════════════ -->
