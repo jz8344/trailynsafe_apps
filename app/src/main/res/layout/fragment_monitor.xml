@@ -21,7 +21,6 @@
         android:layout_marginBottom="40dp"
         android:visibility="gone">
 
-        <!-- Flecha de navegación -->
         <ImageView
             android:id="@+id/centerMarker"
             android:layout_width="96dp"
@@ -31,19 +30,88 @@
             android:src="@drawable/ic_navigation_arrow" />
     </FrameLayout>
 
-    <!-- Bottom Sheet con información -->
+    <!-- FAB Mi Ubicación -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabMiUbicacion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="280dp"
+        android:contentDescription="Mi ubicación"
+        android:src="@drawable/ic_my_location"
+        android:visibility="gone"
+        app:backgroundTint="@color/card_background"
+        app:tint="@color/m3_primary"
+        app:fabSize="normal"
+        app:elevation="6dp" />
+
+    <!-- Bottom Sheet con información - Estilo Uber -->
     <LinearLayout
         android:id="@+id/bottomSheet"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="@color/card_background"
-        android:elevation="8dp"
+        android:background="@drawable/bg_bottom_sheet"
+        android:elevation="16dp"
         android:orientation="vertical"
-        android:padding="20dp"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="24dp"
         android:visibility="gone">
 
+        <!-- Drag Handle -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_drag_handle" />
+
+        <!-- Estado: Ya confirmaste (visible cuando hay confirmación existente) -->
+        <LinearLayout
+            android:id="@+id/layoutYaConfirmado"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_confirmado_badge"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="✓ Ya confirmaste este viaje"
+                android:textColor="@color/m3_success"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btnCambiarUbicacion"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Cambiar ubicación"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="@color/m3_on_surface_variant" />
+        </LinearLayout>
+
+        <!-- Info del hijo confirmado -->
         <TextView
+            android:id="@+id/tvHijoConfirmado"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textColor="@color/m3_on_surface_variant"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <!-- Título instrucción -->
+        <TextView
+            android:id="@+id/tvInstruccion"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/move_map_instruction"
@@ -51,6 +119,7 @@
             android:textSize="18sp"
             android:textStyle="bold" />
 
+        <!-- Dirección con icono -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -70,16 +139,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
-                android:layout_toEndOf="@id/progressBarAddress"
                 android:layout_marginStart="8dp"
+                android:layout_toEndOf="@id/progressBarAddress"
+                android:ellipsize="end"
+                android:maxLines="3"
                 android:text="@string/move_map_select"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:maxLines="3"
-                android:ellipsize="end" />
+                android:textSize="14sp" />
         </RelativeLayout>
 
+        <!-- Botones -->
         <LinearLayout
+            android:id="@+id/layoutBotones"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
@@ -97,7 +168,8 @@
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
-                app:strokeWidth="2dp" />
+                app:strokeColor="@color/m3_outline"
+                app:strokeWidth="1dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnConfirmar"
@@ -108,6 +180,7 @@
                 android:text="@string/btn_confirm_trip"
                 android:textAllCaps="false"
                 android:textSize="16sp"
+                app:backgroundTint="@color/m3_primary"
                 app:cornerRadius="16dp" />
         </LinearLayout>
     </LinearLayout>
@@ -120,15 +193,15 @@
         android:background="@color/background_light"
         android:orientation="vertical">
 
-        <!-- Título -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:padding="20dp"
+            android:paddingBottom="8dp"
             android:text="@string/monitor_title"
-            android:textSize="24sp"
-            android:textStyle="bold"
             android:textColor="@color/text_primary"
-            android:padding="16dp" />
+            android:textSize="26sp"
+            android:textStyle="bold" />
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -139,9 +212,9 @@
                 android:id="@+id/recyclerViewViajes"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:clipToPadding="false"
                 android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:clipToPadding="false" />
+                android:paddingEnd="16dp" />
 
             <ProgressBar
                 android:id="@+id/progressBar"
@@ -156,8 +229,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="@string/no_trips_available"
+                android:textColor="@color/text_secondary"
                 android:textSize="16sp"
-                android:textColor="@android:color/darker_gray"
                 android:visibility="gone" />
 
         </FrameLayout>

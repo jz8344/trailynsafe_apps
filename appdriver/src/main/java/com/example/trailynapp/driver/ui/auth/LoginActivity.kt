@@ -12,6 +12,7 @@ import com.example.trailynapp.driver.MainActivity
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.LoginRequest
 import com.example.trailynapp.driver.api.RetrofitClient
+import com.example.trailynapp.driver.utils.InputValidator
 import com.example.trailynapp.driver.utils.SessionManager
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -22,7 +23,7 @@ import com.google.android.material.textview.MaterialTextView
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
-    
+
     private lateinit var tilEmail: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
     private lateinit var etEmail: TextInputEditText
@@ -36,7 +37,7 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
-        
+
         initViews()
         setupListeners()
     }
@@ -51,6 +52,9 @@ class LoginActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         errorCard = findViewById(R.id.errorCard)
         tvError = findViewById(R.id.tvError)
+
+        etEmail.filters = arrayOf(InputValidator.lengthFilter(254))
+        etPassword.filters = arrayOf(InputValidator.lengthFilter(128))
     }
 
     private fun setupListeners() {
@@ -61,7 +65,12 @@ class LoginActivity : AppCompatActivity() {
         }
 
         tvForgotPassword.setOnClickListener {
-            Toast.makeText(this, "Contacta al administrador para recuperar tu contraseña", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                            this,
+                            "Contacta al administrador para recuperar tu contraseña",
+                            Toast.LENGTH_LONG
+                    )
+                    .show()
         }
     }
 
@@ -98,7 +107,9 @@ class LoginActivity : AppCompatActivity() {
     private fun performLogin() {
         // Ocultar teclado
         currentFocus?.let { view ->
-            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            val imm =
+                    getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as
+                            android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(view.windowToken, 0)
         }
 
@@ -107,59 +118,56 @@ class LoginActivity : AppCompatActivity() {
         btnLogin.isEnabled = false
         errorCard.visibility = View.GONE
 
-        val email = etEmail.text.toString().trim()
+        val email = InputValidator.sanitizeEmail(etEmail.text.toString())
         val password = etPassword.text.toString().trim()
 
         lifecycleScope.launch {
             try {
-                val request = LoginRequest(
-                    correo = email,
-                    password = password
-                )
-                
+                val request = LoginRequest(correo = email, password = password)
+
                 val response = RetrofitClient.apiService.loginChofer(request)
-                
+
                 if (response.isSuccessful && response.body() != null) {
                     val loginData = response.body()!!
-                    
+
                     // Guardar sesión
                     val sessionManager = SessionManager(this@LoginActivity)
                     sessionManager.saveLoginSession(
-                        token = loginData.token,
-                        choferId = loginData.chofer.id,
-                        nombre = loginData.chofer.nombre,
-                        apellidos = loginData.chofer.apellidos,
-                        correo = loginData.chofer.correo,
-                        telefono = loginData.chofer.telefono ?: ""
+                            token = loginData.token,
+                            choferId = loginData.chofer.id,
+                            nombre = loginData.chofer.nombre,
+                            apellidos = loginData.chofer.apellidos,
+                            correo = loginData.chofer.correo,
+                            telefono = loginData.chofer.telefono ?: ""
                     )
-                    
+
                     // Mostrar mensaje de bienvenida
                     Toast.makeText(
-                        this@LoginActivity,
-                        "Bienvenido, ${loginData.chofer.nombre}!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    
+                                    this@LoginActivity,
+                                    "Bienvenido, ${loginData.chofer.nombre}!",
+                                    Toast.LENGTH_SHORT
+                            )
+                            .show()
+
                     // Navegar a MainActivity
                     val intent = Intent(this@LoginActivity, MainActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
                     finish()
-                    
                 } else {
                     // Manejar errores de respuesta
                     val errorBody = response.errorBody()?.string()
                     Log.e("LoginActivity", "Error response: $errorBody")
-                    
-                    val errorMessage = when (response.code()) {
-                        403 -> "Tu cuenta no está activa. Contacta al administrador."
-                        422 -> "Las credenciales proporcionadas son incorrectas."
-                        else -> "Error al iniciar sesión. Intenta de nuevo."
-                    }
-                    
+
+                    val errorMessage =
+                            when (response.code()) {
+                                403 -> "Tu cuenta no está activa. Contacta al administrador."
+                                422 -> "Las credenciales proporcionadas son incorrectas."
+                                else -> "Error al iniciar sesión. Intenta de nuevo."
+                            }
+
                     showError(errorMessage)
                 }
-                
             } catch (e: Exception) {
                 Log.e("LoginActivity", "Error en login", e)
                 showError("Error de conexión. Verifica tu internet e intenta de nuevo.")
@@ -169,7 +177,7 @@ class LoginActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     private fun showError(message: String) {
         tvError.text = message
         errorCard.visibility = View.VISIBLE

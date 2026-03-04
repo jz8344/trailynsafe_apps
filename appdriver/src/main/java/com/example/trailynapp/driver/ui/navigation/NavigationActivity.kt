@@ -29,6 +29,7 @@ import androidx.core.content.ContextCompat
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.QRScanRequest
 import com.example.trailynapp.driver.api.RetrofitClient
+import com.example.trailynapp.driver.services.LocationTrackingService
 import com.example.trailynapp.driver.services.WearableDataListenerService
 import com.example.trailynapp.driver.ui.qr.QRScannerActivity
 import com.example.trailynapp.driver.ui.trips.Viaje
@@ -678,6 +679,15 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
                                         Toast.LENGTH_LONG
                                 )
                                 .show()
+
+                        // Detener el servicio de tracking en segundo plano
+                        val serviceIntent =
+                                Intent(this@NavigationActivity, LocationTrackingService::class.java)
+                                        .apply {
+                                            action = LocationTrackingService.ACTION_STOP_TRACKING
+                                        }
+                        this@NavigationActivity.startService(serviceIntent)
+
                         finish()
                     } else {
                         Toast.makeText(
@@ -805,6 +815,26 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
         if (isTrackingLocation) return
         isTrackingLocation = true
 
+        // Iniciar servicio en segundo plano para el backend
+        val serviceIntent =
+                Intent(this, LocationTrackingService::class.java).apply {
+                    action = LocationTrackingService.ACTION_START_TRACKING
+                    putExtra(LocationTrackingService.EXTRA_RUTA_ID, currentViaje?.ruta?.id ?: -1)
+                }
+        val context = this
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(
+                    "NavigationActivity",
+                    "Error al iniciar tracking service: ${e.message}"
+            )
+        }
+
         val locationRequest =
                 LocationRequest.Builder(
                                 Priority.PRIORITY_HIGH_ACCURACY,
@@ -888,6 +918,13 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
             fusedLocationClient.removeLocationUpdates(locationCallback!!)
             isTrackingLocation = false
         }
+
+        // Detener explícitamente el servicio en segundo plano
+        val serviceIntent =
+                Intent(this, LocationTrackingService::class.java).apply {
+                    action = LocationTrackingService.ACTION_STOP_TRACKING
+                }
+        startService(serviceIntent)
     }
 
     private fun calculateBearing(from: LatLng, to: LatLng): Float {
@@ -1063,6 +1100,7 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
     override fun onDestroy() {
         super.onDestroy()
         healthMonitoringJob?.cancel()
+        stopLocationTracking()
     }
 
     /** Actualiza el banner de maniobra con la distancia y dirección a la siguiente parada */

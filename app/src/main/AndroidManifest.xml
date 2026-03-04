@@ -92,6 +92,25 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".LoginActivity" />
             
+        <activity
+            android:name=".ui.tracking.TrackingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.hijos.RegistroHijoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".ui.hijos.EditarHijoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+
+            
     </application>
 
 </manifest>

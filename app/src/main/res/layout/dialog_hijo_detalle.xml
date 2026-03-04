@@ -153,6 +153,16 @@
         app:cornerRadius="16dp"
         app:backgroundTint="@color/m3_primary" />
 
+    <!-- Botón Editar -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEditarHijo"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:text="Editar Datos"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        app:cornerRadius="16dp" />
+
     <!-- Botón Cerrar -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnCerrar"
