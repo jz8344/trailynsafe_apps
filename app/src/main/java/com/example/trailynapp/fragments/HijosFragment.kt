@@ -70,14 +70,15 @@ class HijosFragment : Fragment() {
         progressBar.visibility = View.VISIBLE
         emptyView.visibility = View.GONE
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val token = "Bearer ${sessionManager.getToken()}"
                 val response = RetrofitClient.apiService.getHijos(token)
 
+                if (!isAdded) return@launch
+
                 if (response.isSuccessful && response.body() != null) {
                     val hijos = response.body()!!
-
                     if (hijos.isEmpty()) {
                         emptyView.visibility = View.VISIBLE
                         emptyView.text =
@@ -87,13 +88,24 @@ class HijosFragment : Fragment() {
                         recyclerView.adapter = adapter
                     }
                 } else {
-                    Toast.makeText(requireContext(), "Error al cargar hijos", Toast.LENGTH_SHORT)
+                    if (isAdded) {
+                        Toast.makeText(
+                                        requireContext(),
+                                        "Error al cargar hijos",
+                                        Toast.LENGTH_SHORT
+                                )
+                                .show()
+                    }
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                if (isAdded) {
+                    Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT)
                             .show()
                 }
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
-                progressBar.visibility = View.GONE
+                if (isAdded) progressBar.visibility = View.GONE
             }
         }
     }

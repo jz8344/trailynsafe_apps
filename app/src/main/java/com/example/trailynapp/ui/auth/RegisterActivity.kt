@@ -22,7 +22,7 @@ import com.google.android.material.textview.MaterialTextView
 import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
-    
+
     private lateinit var tilNombre: TextInputLayout
     private lateinit var tilApellidos: TextInputLayout
     private lateinit var tilTelefono: TextInputLayout
@@ -40,15 +40,15 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var successCard: MaterialCardView
     private lateinit var tvError: MaterialTextView
     private lateinit var loginContainer: View
-    
+
     private lateinit var googleAuthManager: GoogleAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
-        
+
         googleAuthManager = GoogleAuthManager(this)
-        
+
         initViews()
         setupListeners()
     }
@@ -79,10 +79,8 @@ class RegisterActivity : AppCompatActivity() {
                 performRegister()
             }
         }
-        
-        btnGoogle.setOnClickListener {
-            performGoogleSignUp()
-        }
+
+        btnGoogle.setOnClickListener { performGoogleSignUp() }
 
         loginContainer.setOnClickListener {
             finish() // Volver a la pantalla de login
@@ -150,131 +148,153 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     private fun performRegister() {
-        // Ocultar teclado
         currentFocus?.let { view ->
-            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+            val imm =
+                    getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as
+                            android.view.inputmethod.InputMethodManager
             imm.hideSoftInputFromWindow(view.windowToken, 0)
         }
 
-        // Mostrar loading
         progressBar.visibility = View.VISIBLE
         btnRegister.isEnabled = false
+        btnGoogle.isEnabled = false
         errorCard.visibility = View.GONE
         successCard.visibility = View.GONE
 
-        // Simular registro (aquí integrarías tu backend)
-        etEmail.postDelayed({
-            // Registro exitoso
-            successCard.visibility = View.VISIBLE
-            btnRegister.isEnabled = true
-            progressBar.visibility = View.GONE
-            
-            // Redirigir al login después de 2 segundos
-            etEmail.postDelayed({
-                val intent = Intent(this, LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                startActivity(intent)
-                finish()
-            }, 2000)
-        }, 1500)
+        val nombre = etNombre.text.toString().trim()
+        val apellidos = etApellidos.text.toString().trim()
+        val telefono = etTelefono.text.toString().trim()
+        val email = etEmail.text.toString().trim()
+        val password = etPassword.text.toString()
+
+        lifecycleScope.launch {
+            try {
+                val request =
+                        com.example.trailynapp.api.RegisterRequest(
+                                nombre = nombre,
+                                apellidos = apellidos,
+                                telefono = telefono,
+                                correo = email,
+                                contrasena = password
+                        )
+                val response =
+                        com.example.trailynapp.api.RetrofitClient.apiService.register(request)
+
+                if (response.isSuccessful && response.body() != null) {
+                    progressBar.visibility = View.GONE
+                    successCard.visibility = View.VISIBLE
+                    btnRegister.isEnabled = false
+                    btnGoogle.isEnabled = false
+
+                    etEmail.postDelayed(
+                            {
+                                val intent =
+                                        Intent(this@RegisterActivity, LoginActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                startActivity(intent)
+                                finish()
+                            },
+                            1800
+                    )
+                } else {
+                    val raw = response.errorBody()?.string() ?: response.message()
+                    val msg = com.example.trailynapp.utils.InputValidator.parseServerError(raw)
+                    showError(msg)
+                }
+            } catch (e: Exception) {
+                showError("Error de conexión. Verifica tu internet e intenta de nuevo.")
+            } finally {
+                progressBar.visibility = View.GONE
+            }
+        }
     }
-    
+
     /**
-     * Inicia el flujo de registro con Google
-     * Muestra todas las cuentas disponibles (no filtra por autorizadas)
+     * Inicia el flujo de registro con Google Muestra todas las cuentas disponibles (no filtra por
+     * autorizadas)
      */
     private fun performGoogleSignUp() {
         progressBar.visibility = View.VISIBLE
         btnRegister.isEnabled = false
         btnGoogle.isEnabled = false
         errorCard.visibility = View.GONE
-        
+
         lifecycleScope.launch {
             try {
                 // Para registro, mostramos TODAS las cuentas (filterByAuthorizedAccounts = false)
-                val result = googleAuthManager.signInWithGoogle(
-                    filterByAuthorizedAccounts = false,
-                    autoSelectEnabled = false
-                )
-                
+                val result =
+                        googleAuthManager.signInWithGoogle(
+                                filterByAuthorizedAccounts = false,
+                                autoSelectEnabled = false
+                        )
+
                 handleGoogleAuthResult(result)
-                
             } catch (e: Exception) {
                 Log.e("RegisterActivity", "Error en Google Sign-Up", e)
                 progressBar.visibility = View.GONE
                 btnRegister.isEnabled = true
                 btnGoogle.isEnabled = true
                 Toast.makeText(
-                    this@RegisterActivity,
-                    "Error al registrarse con Google",
-                    Toast.LENGTH_SHORT
-                ).show()
+                                this@RegisterActivity,
+                                "Error al registrarse con Google",
+                                Toast.LENGTH_SHORT
+                        )
+                        .show()
             }
         }
     }
-    
-    /**
-     * Maneja el resultado de la autenticación con Google
-     */
+
     private fun handleGoogleAuthResult(result: GoogleAuthManager.GoogleAuthResult) {
         when (result) {
             is GoogleAuthManager.GoogleAuthResult.Success -> {
-                // Enviar el ID token al backend
                 sendGoogleTokenToBackend(result.idToken)
             }
-            
             is GoogleAuthManager.GoogleAuthResult.Error -> {
-                progressBar.visibility = View.GONE
-                btnRegister.isEnabled = true
-                btnGoogle.isEnabled = true
-                Toast.makeText(
-                    this,
-                    "Error: ${result.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                val msg =
+                        com.example.trailynapp.utils.InputValidator.parseServerError(result.message)
+                showError(msg)
             }
-            
             is GoogleAuthManager.GoogleAuthResult.Cancelled -> {
                 progressBar.visibility = View.GONE
                 btnRegister.isEnabled = true
                 btnGoogle.isEnabled = true
-                Toast.makeText(this, "Registro cancelado", Toast.LENGTH_SHORT).show()
             }
         }
     }
-    
-    /**
-     * Envía el ID token de Google al backend para registro
-     */
+
+    /** Envía el ID token de Google al backend para registro */
     private fun sendGoogleTokenToBackend(idToken: String) {
         lifecycleScope.launch {
             try {
-                val request = GoogleAuthRequest(
-                    id_token = idToken,
-                    device_name = "android-${android.os.Build.MODEL}"
-                )
-                
+                val request =
+                        GoogleAuthRequest(
+                                id_token = idToken,
+                                device_name = "android-${android.os.Build.MODEL}"
+                        )
+
                 val response = RetrofitClient.apiService.loginWithGoogle(request)
-                
+
                 if (response.isSuccessful && response.body()?.success == true) {
                     val authData = response.body()?.data
-                    
+
                     if (authData != null) {
                         // Guardar token en SharedPreferences
                         saveUserSession(authData.token, authData.usuario.nombre)
-                        
+
                         // Mostrar mensaje de bienvenida
-                        val mensaje = if (response.body()?.is_new_user == true) {
-                            "¡Cuenta creada exitosamente!"
-                        } else {
-                            "Ya tienes una cuenta. ¡Bienvenido de nuevo!"
-                        }
-                        
+                        val mensaje =
+                                if (response.body()?.is_new_user == true) {
+                                    "¡Cuenta creada exitosamente!"
+                                } else {
+                                    "Ya tienes una cuenta. ¡Bienvenido de nuevo!"
+                                }
+
                         Toast.makeText(this@RegisterActivity, mensaje, Toast.LENGTH_SHORT).show()
-                        
+
                         // Navegar a MainActivity
                         val intent = Intent(this@RegisterActivity, MainActivity::class.java)
-                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        intent.flags =
+                                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         startActivity(intent)
                         finish()
                     } else {
@@ -284,7 +304,6 @@ class RegisterActivity : AppCompatActivity() {
                     val errorMessage = response.body()?.message ?: "Error desconocido"
                     showError(errorMessage)
                 }
-                
             } catch (e: Exception) {
                 Log.e("RegisterActivity", "Error enviando token al backend", e)
                 showError("Error de conexión con el servidor")
@@ -295,10 +314,8 @@ class RegisterActivity : AppCompatActivity() {
             }
         }
     }
-    
-    /**
-     * Guarda la sesión del usuario en SharedPreferences
-     */
+
+    /** Guarda la sesión del usuario en SharedPreferences */
     private fun saveUserSession(token: String, userName: String) {
         val prefs = getSharedPreferences("TrailynSafePrefs", MODE_PRIVATE)
         prefs.edit().apply {
@@ -308,14 +325,35 @@ class RegisterActivity : AppCompatActivity() {
             apply()
         }
     }
-    
-    /**
-     * Muestra un mensaje de error
-     */
+
     private fun showError(message: String) {
         progressBar.visibility = View.GONE
         btnRegister.isEnabled = true
         btnGoogle.isEnabled = true
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        successCard.visibility = View.GONE
+
+        tilEmail.error = null
+        tilPassword.error = null
+
+        when {
+            message.contains("correo", ignoreCase = true) ||
+                    message.contains("registrado", ignoreCase = true) ||
+                    message.contains("email", ignoreCase = true) -> {
+                tilEmail.error = message
+            }
+            message.contains("contraseña", ignoreCase = true) ||
+                    message.contains("contrasena", ignoreCase = true) -> {
+                tilPassword.error = message
+            }
+        }
+
+        com.google.android.material.snackbar.Snackbar.make(
+                        window.decorView,
+                        message,
+                        com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+                )
+                .setBackgroundTint(android.graphics.Color.parseColor("#B00020"))
+                .setTextColor(android.graphics.Color.WHITE)
+                .show()
     }
 }

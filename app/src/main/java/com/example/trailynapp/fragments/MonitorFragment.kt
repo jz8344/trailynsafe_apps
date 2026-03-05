@@ -258,6 +258,8 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
                     if (confResponse.isSuccessful && confResponse.body() != null) {
                         confirmacionesCache = confResponse.body()!!
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     android.util.Log.e(
                             "MonitorFragment",
@@ -271,6 +273,8 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
                     if (activosResponse.isSuccessful && activosResponse.body() != null) {
                         viajesActivosCache = activosResponse.body()!!
                     }
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     android.util.Log.e(
                             "MonitorFragment",
@@ -357,13 +361,17 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
                                     }
                             recyclerView.adapter = adapter
                         }
+                    } catch (ex: kotlinx.coroutines.CancellationException) {
+                        throw ex
                     } catch (ex: Exception) {
                         android.util.Log.e(
                                 "MonitorFragment",
                                 "Error parseando viajes: ${ex.message}"
                         )
-                        tvEmptyView.visibility = View.VISIBLE
-                        tvEmptyView.text = getString(R.string.error_loading_trips)
+                        if (isAdded) {
+                            tvEmptyView.visibility = View.VISIBLE
+                            tvEmptyView.text = getString(R.string.error_loading_trips)
+                        }
                     }
                 } else {
                     tvEmptyView.visibility = View.VISIBLE
@@ -634,9 +642,13 @@ class MonitorFragment : Fragment(), OnMapReadyCallback, SensorEventListener {
 
         val hijosDisponibles =
                 hijosCache.filter { hijo ->
-                    confirmacionesCache.none { conf ->
-                        conf.viaje_id == viaje.id && conf.hijo_id == hijo.id
-                    }
+                    val mismaEscuela =
+                            viaje.escuela_id == null || hijo.escuela_id == viaje.escuela_id
+                    val noYaConfirmado =
+                            confirmacionesCache.none { conf ->
+                                conf.viaje_id == viaje.id && conf.hijo_id == hijo.id
+                            }
+                    mismaEscuela && noYaConfirmado
                 }
 
         if (hijosDisponibles.isEmpty()) {

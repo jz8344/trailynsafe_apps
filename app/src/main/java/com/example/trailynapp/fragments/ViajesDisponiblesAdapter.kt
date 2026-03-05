@@ -38,12 +38,24 @@ class ViajesDisponiblesAdapter(
     override fun onBindViewHolder(holder: ViajeViewHolder, position: Int) {
         val viaje = viajes[position]
         val context = holder.itemView.context
+
+        val turnoLabel =
+                when (viaje.turno) {
+                    "matutino" -> "Matutino"
+                    "vespertino" -> "Vespertino"
+                    "nocturno" -> "Nocturno"
+                    else -> viaje.turno?.replaceFirstChar { it.uppercase() } ?: ""
+                }
+        val nombreViaje =
+                viaje.nombre?.takeIf { it.isNotBlank() }
+                        ?: viaje.escuela?.nombre ?: context.getString(R.string.school_not_specified)
         holder.tvEscuela.text =
-                viaje.escuela?.nombre ?: context.getString(R.string.school_not_specified)
-        holder.tvHorario.text = "🕐 ${viaje.hora_salida_programada}"
+                if (turnoLabel.isNotBlank()) "$nombreViaje · $turnoLabel" else nombreViaje
+
+        holder.tvHorario.text = "🕐 ${viaje.hora_salida_programada ?: "—"}"
         holder.tvChofer.text =
                 "👨‍✈️ ${viaje.chofer?.nombre ?: context.getString(R.string.driver_not_assigned)}"
-        holder.tvFecha.text = viaje.fecha_viaje
+        holder.tvFecha.text = viaje.fecha_viaje ?: ""
 
         when {
             viajesEnCurso.contains(viaje.id) -> {

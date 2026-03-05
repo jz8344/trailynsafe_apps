@@ -1,24 +1,12 @@
 package com.example.trailynapp.ui.hijos
 
-import android.Manifest
-import android.content.ContentValues
-import android.content.pm.PackageManager
-import android.graphics.*
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.MediaStore
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.trailynapp.R
 import com.example.trailynapp.api.EscuelaSimple
@@ -30,8 +18,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import java.io.OutputStream
-import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -47,24 +33,8 @@ class RegistroHijoActivity : AppCompatActivity() {
     private lateinit var btnRegistrar: MaterialButton
     private lateinit var progressBar: ProgressBar
 
-    private lateinit var layoutQrPreview: LinearLayout
-    private lateinit var ivQrPreview: ImageView
-    private lateinit var btnDescargarGafete: MaterialButton
-
     private lateinit var sessionManager: SessionManager
     private var escuelasLista: List<EscuelaSimple> = emptyList()
-    private var currentGafeteBitmap: Bitmap? = null
-    private var nombreEstudiante = ""
-
-    private val requestPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-                if (isGranted) {
-                    guardarEnGaleria()
-                } else {
-                    Toast.makeText(this, "Permiso denegado para guardar imagen", Toast.LENGTH_SHORT)
-                            .show()
-                }
-            }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,16 +54,11 @@ class RegistroHijoActivity : AppCompatActivity() {
         btnRegistrar = findViewById(R.id.btnRegistrarHijo)
         progressBar = findViewById(R.id.progressBarRegistro)
 
-        layoutQrPreview = findViewById(R.id.layoutQrPreview)
-        ivQrPreview = findViewById(R.id.ivQrPreview)
-        btnDescargarGafete = findViewById(R.id.btnDescargarGafete)
-
         configurarSpinnersDuros()
         cargarEscuelas()
         applyInputFilters()
 
         btnRegistrar.setOnClickListener { registrarHijo() }
-        btnDescargarGafete.setOnClickListener { solicitarPermisoGuardado() }
     }
 
     private fun applyInputFilters() {
@@ -224,26 +189,32 @@ class RegistroHijoActivity : AppCompatActivity() {
                 val response = RetrofitClient.apiService.registrarHijo("Bearer $token", requestBody)
 
                 if (response.isSuccessful && response.body() != null) {
-                    Toast.makeText(
-                                    this@RegistroHijoActivity,
-                                    "Estudiante registrado con éxito",
-                                    Toast.LENGTH_SHORT
-                            )
-                            .show()
-                    nombreEstudiante = nombre
-                    generarYMostrarGafete(codigoQrGenerado, nombre, grado, grupo, escuelaNombre)
-
-                    // Deshabilitar formulario
-                    btnRegistrar.visibility = View.GONE
-                    etNombre.isEnabled = false
-                    spinnerEscuela.isEnabled = false
-                    spinnerGrado.isEnabled = false
-                    spinnerGrupo.isEnabled = false
-                    etEmergencia1.isEnabled = false
-                    etEmergencia2.isEnabled = false
+                    val qrBytes =
+                            withContext(Dispatchers.Default) { generarQrBytes(codigoQrGenerado) }
+                    val intent =
+                            android.content.Intent(
+                                            this@RegistroHijoActivity,
+                                            GafeteActivity::class.java
+                                    )
+                                    .apply {
+                                        putExtra(GafeteActivity.EXTRA_NOMBRE, nombre)
+                                        putExtra(GafeteActivity.EXTRA_GRADO, grado)
+                                        putExtra(GafeteActivity.EXTRA_GRUPO, grupo)
+                                        putExtra(GafeteActivity.EXTRA_ESCUELA, escuelaNombre)
+                                        if (qrBytes != null)
+                                                putExtra(GafeteActivity.EXTRA_QR_BYTES, qrBytes)
+                                    }
+                    startActivity(intent)
+                    finish()
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Error de servidor"
-                    Toast.makeText(this@RegistroHijoActivity, "Error: $errorMsg", Toast.LENGTH_LONG)
+                    Toast.makeText(
+                                    this@RegistroHijoActivity,
+                                    com.example.trailynapp.utils.InputValidator.parseServerError(
+                                            errorMsg
+                                    ),
+                                    Toast.LENGTH_LONG
+                            )
                             .show()
                 }
             } catch (e: Exception) {
@@ -256,191 +227,33 @@ class RegistroHijoActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun generarYMostrarGafete(
-            qrContent: String,
-            nombre: String,
-            grado: String,
-            grupo: String,
-            escuela: String
-    ) {
-        withContext(Dispatchers.Default) {
-            try {
-                // 1. Generate QR Code Bitmap
-                val writer = QRCodeWriter()
-                val bitMatrix = writer.encode(qrContent, BarcodeFormat.QR_CODE, 512, 512)
-                val width = bitMatrix.width
-                val height = bitMatrix.height
-                val qrBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-                for (x in 0 until width) {
-                    for (y in 0 until height) {
-                        qrBitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
-                    }
-                }
-
-                // 2. Draw ID Card (Gafete) using Canvas
-                val cardWidth = 800
-                val cardHeight = 1200
-                val gafeteBitmap =
-                        Bitmap.createBitmap(cardWidth, cardHeight, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(gafeteBitmap)
-
-                // Background
-                canvas.drawColor(Color.WHITE)
-
-                // Header (Color Primary)
-                val paintHeader =
-                        Paint().apply {
-                            color = Color.parseColor("#4285F4")
-                            style = Paint.Style.FILL
-                        }
-                canvas.drawRect(0f, 0f, cardWidth.toFloat(), 200f, paintHeader)
-
-                // Header Text
-                val paintTitle =
-                        Paint().apply {
-                            color = Color.WHITE
-                            textSize = 60f
-                            isAntiAlias = true
-                            textAlign = Paint.Align.CENTER
-                            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        }
-                canvas.drawText("TRAILYN SAFE", cardWidth / 2f, 130f, paintTitle)
-
-                // Student Name
-                val paintName =
-                        Paint().apply {
-                            color = Color.BLACK
-                            textSize = 55f
-                            isAntiAlias = true
-                            textAlign = Paint.Align.CENTER
-                            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                        }
-                canvas.drawText(nombre, cardWidth / 2f, 300f, paintName)
-
-                // School Name
-                val paintSchool =
-                        Paint().apply {
-                            color = Color.parseColor("#5F6368")
-                            textSize = 40f
-                            isAntiAlias = true
-                            textAlign = Paint.Align.CENTER
-                        }
-                canvas.drawText(escuela, cardWidth / 2f, 370f, paintSchool)
-
-                // Grade & Group
-                val paintInfo =
-                        Paint().apply {
-                            color = Color.BLACK
-                            textSize = 45f
-                            isAntiAlias = true
-                            textAlign = Paint.Align.CENTER
-                        }
-                canvas.drawText("Grado: $grado | Grupo: $grupo", cardWidth / 2f, 440f, paintInfo)
-
-                // Draw QR Code in the middle
-                val qrSize = 500
-                val scaledQr = Bitmap.createScaledBitmap(qrBitmap, qrSize, qrSize, false)
-                canvas.drawBitmap(scaledQr, (cardWidth - qrSize) / 2f, 520f, null)
-
-                // Footer Text
-                val paintFooter =
-                        Paint().apply {
-                            color = Color.parseColor("#9AA0A6")
-                            textSize = 30f
-                            isAntiAlias = true
-                            textAlign = Paint.Align.CENTER
-                        }
-                canvas.drawText("Gafete Escolar Exclusivo", cardWidth / 2f, 1100f, paintFooter)
-                canvas.drawText(
-                        "Escanea este código al abordar la unidad",
-                        cardWidth / 2f,
-                        1150f,
-                        paintFooter
-                )
-
-                currentGafeteBitmap = gafeteBitmap
-
-                withContext(Dispatchers.Main) {
-                    ivQrPreview.setImageBitmap(gafeteBitmap)
-                    layoutQrPreview.visibility = View.VISIBLE
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                                    this@RegistroHijoActivity,
-                                    "Error generando QR: ${e.message}",
-                                    Toast.LENGTH_SHORT
-                            )
-                            .show()
+    private fun generarQrBytes(qrContent: String): ByteArray? {
+        return try {
+            val writer = com.google.zxing.qrcode.QRCodeWriter()
+            val bitMatrix = writer.encode(qrContent, BarcodeFormat.QR_CODE, 512, 512)
+            val width = bitMatrix.width
+            val height = bitMatrix.height
+            val bitmap =
+                    android.graphics.Bitmap.createBitmap(
+                            width,
+                            height,
+                            android.graphics.Bitmap.Config.RGB_565
+                    )
+            for (x in 0 until width) {
+                for (y in 0 until height) {
+                    bitmap.setPixel(
+                            x,
+                            y,
+                            if (bitMatrix[x, y]) android.graphics.Color.BLACK
+                            else android.graphics.Color.WHITE
+                    )
                 }
             }
-        }
-    }
-
-    private fun solicitarPermisoGuardado() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            guardarEnGaleria() // No necesita permiso REQ
-        } else {
-            if (ContextCompat.checkSelfPermission(
-                            this,
-                            Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                guardarEnGaleria()
-            } else {
-                requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-        }
-    }
-
-    private fun guardarEnGaleria() {
-        val bitmap = currentGafeteBitmap ?: return
-
-        val filename =
-                "Gafete_TrailynSafe_${nombreEstudiante.replace(" ", "_")}_${System.currentTimeMillis()}.png"
-        var fos: OutputStream? = null
-
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                val resolver = contentResolver
-                val contentValues =
-                        ContentValues().apply {
-                            put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                            put(MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                            put(
-                                    MediaStore.MediaColumns.RELATIVE_PATH,
-                                    Environment.DIRECTORY_PICTURES + "/TrailynSafe"
-                            )
-                        }
-                val imageUri: Uri? =
-                        resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-                if (imageUri != null) {
-                    fos = resolver.openOutputStream(imageUri)
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                val imagesDir =
-                        Environment.getExternalStoragePublicDirectory(
-                                        Environment.DIRECTORY_PICTURES
-                                )
-                                .toString() + "/TrailynSafe"
-                val file = java.io.File(imagesDir)
-                if (!file.exists()) file.mkdir()
-                val image = java.io.File(imagesDir, filename)
-                fos = java.io.FileOutputStream(image)
-            }
-
-            fos?.use {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-                Toast.makeText(
-                                this,
-                                "Gafete guardado en Galería (Pictures/TrailynSafe)",
-                                Toast.LENGTH_LONG
-                        )
-                        .show()
-            }
+            val stream = java.io.ByteArrayOutputStream()
+            bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+            stream.toByteArray()
         } catch (e: Exception) {
-            Toast.makeText(this, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
+            null
         }
     }
 }

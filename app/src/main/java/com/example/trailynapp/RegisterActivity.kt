@@ -134,7 +134,8 @@ class RegisterActivity : AppCompatActivity() {
                     finish() // Volver a login
                 } else {
                     val errorBody = response.errorBody()?.string()
-                    Toast.makeText(this@RegisterActivity, "Error: $errorBody", Toast.LENGTH_LONG)
+                    val friendlyMessage = InputValidator.parseServerError(errorBody)
+                    Toast.makeText(this@RegisterActivity, friendlyMessage, Toast.LENGTH_LONG)
                             .show()
                 }
             } catch (e: Exception) {

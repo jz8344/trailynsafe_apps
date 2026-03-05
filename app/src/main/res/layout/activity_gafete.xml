@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="24dp">
+
+        <ImageButton
+            android:id="@+id/btnCerrarGafete"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="start"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Cerrar"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="?attr/colorOnSurface" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="¡Registro exitoso!"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="24dp"
+            android:text="Guarda el gafete de tu hijo"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="14sp" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="280dp"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:background="@color/white"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/tvGafeteNombreEscuela"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Escuela"
+                    android:textColor="#1565C0"
+                    android:textSize="13sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.05" />
+
+                <View
+                    android:layout_width="200dp"
+                    android:layout_height="2dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="#1565C0" />
+
+                <ImageView
+                    android:id="@+id/ivGafeteQR"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:contentDescription="Código QR" />
+
+                <TextView
+                    android:id="@+id/tvGafeteNombreHijo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Nombre del Hijo"
+                    android:textColor="#212121"
+                    android:textSize="18sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center" />
+
+                <TextView
+                    android:id="@+id/tvGafeteGradoGrupo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Grado · Grupo"
+                    android:textColor="#616161"
+                    android:textSize="14sp"
+                    android:gravity="center" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="#E3F2FD"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="4dp"
+                    android:text="TrailynSafe"
+                    android:textColor="#1565C0"
+                    android:textSize="11sp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDescargarGafeteNuevo"
+            android:layout_width="280dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="28dp"
+            android:text="⬇  Descargar gafete"
+            android:textSize="15sp"
+            app:cornerRadius="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFinalizarGafete"
+            android:layout_width="280dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:text="Ir a mis hijos"
+            android:textSize="15sp"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            app:cornerRadius="12dp" />
+
+    </LinearLayout>
+</ScrollView>
