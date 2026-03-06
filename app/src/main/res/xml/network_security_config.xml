@@ -7,7 +7,12 @@
         </trust-anchors>
     </base-config>
     
-    <!-- Permitir Google Maps (necesita HTTP para tiles en algunas versiones) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.trailynsafe.lat</domain>
+        <domain includeSubdomains="true">trailynsafe.lat</domain>
+        <domain includeSubdomains="true">ml.trailynsafe.lat</domain>
+    </domain-config>
+    
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">maps.googleapis.com</domain>
         <domain includeSubdomains="true">maps.google.com</domain>

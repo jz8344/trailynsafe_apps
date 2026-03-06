@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <!-- Configuración para Railway - permitir tanto HTTP como HTTPS temporalmente -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">web-production-86356.up.railway.app</domain>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.trailynsafe.lat</domain>
+        <domain includeSubdomains="true">trailynsafe.lat</domain>
+        <domain includeSubdomains="true">ml.trailynsafe.lat</domain>
     </domain-config>
     
     <!-- Localhost para desarrollo -->
