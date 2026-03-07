@@ -1,6 +1,7 @@
 package com.example.trailynapp.ui.auth
 
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -44,6 +45,8 @@ class RecuperarPasswordActivity : AppCompatActivity() {
     
     private var currentStep = 1
     private var userEmail = ""
+    private var sendCodeTimer: CountDownTimer? = null
+    private var originalSendText = "Enviar código"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -175,7 +178,10 @@ class RecuperarPasswordActivity : AppCompatActivity() {
                         "Si el correo está registrado, recibirás un código de verificación",
                         Toast.LENGTH_LONG
                     ).show()
+                    startSendCooldown()
                     showStep(2)
+                } else if (response.code() == 429) {
+                    Toast.makeText(this@RecuperarPasswordActivity, "Solo puedes solicitar un código cada 2 minutos", Toast.LENGTH_LONG).show()
                 } else {
                     Toast.makeText(this@RecuperarPasswordActivity, "Error al enviar código", Toast.LENGTH_SHORT).show()
                 }
@@ -306,5 +312,26 @@ class RecuperarPasswordActivity : AppCompatActivity() {
             3 -> showStep(2)
             else -> super.onBackPressed()
         }
+    }
+
+    private fun startSendCooldown() {
+        sendCodeTimer?.cancel()
+        btnSendCode.isEnabled = false
+        sendCodeTimer = object : CountDownTimer(120_000, 1_000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val secs = (millisUntilFinished / 1000).toInt()
+                btnSendCode.text = "Espera ${secs}s"
+                btnSendCode.isEnabled = false
+            }
+            override fun onFinish() {
+                btnSendCode.text = originalSendText
+                btnSendCode.isEnabled = true
+            }
+        }.start()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        sendCodeTimer?.cancel()
     }
 }

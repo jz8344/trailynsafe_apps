@@ -1,85 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- MATERIAL YOU / MATERIAL 3 - Tema Oscuro Premium -->
-    <!-- Inspirado en Google Apps (Maps, Gmail, Drive) -->
+    <!-- MATERIAL YOU / MATERIAL 3 - Tema Claro Premium -->
     <!-- ═══════════════════════════════════════════════════════════ -->
 
-    <!-- Surface Colors (M3 Dark) -->
-    <color name="m3_surface">#121212</color>
-    <color name="m3_surface_variant">#1E1E1E</color>
-    <color name="m3_surface_container">#1A1A1A</color>
-    <color name="m3_surface_container_high">#242424</color>
-    <color name="m3_surface_container_highest">#2E2E2E</color>
+    <!-- Surface Colors (M3 Light - Slate) -->
+    <color name="m3_surface">#FFFFFF</color>
+    <color name="m3_surface_variant">#E2E8F0</color>
+    <color name="m3_surface_container">#F8FAFC</color>
+    <color name="m3_surface_container_high">#F1F5F9</color>
+    <color name="m3_surface_container_highest">#E2E8F0</color>
 
-    <!-- Primary Colors (Blue tones - Google style) -->
-    <color name="m3_primary">#8AB4F8</color>
-    <color name="m3_primary_container">#004A77</color>
-    <color name="m3_on_primary">#003258</color>
-    <color name="m3_on_primary_container">#D1E4FF</color>
+    <!-- Primary Colors (Blue tones - Intense Pastel Blue) -->
+    <color name="m3_primary">#0863FF</color>
+    <color name="m3_primary_container">#E8F3FF</color>
+    <color name="m3_on_primary">#FFFFFF</color>
+    <color name="m3_on_primary_container">#00396A</color>
 
     <!-- Secondary Colors -->
-    <color name="m3_secondary">#A8C7FA</color>
-    <color name="m3_secondary_container">#2D4665</color>
-    <color name="m3_on_secondary">#1B3A5C</color>
+    <color name="m3_secondary">#596C83</color>
+    <color name="m3_secondary_container">#F0F6FA</color>
+    <color name="m3_on_secondary">#192D42</color>
 
     <!-- Tertiary Colors (Accent) -->
-    <color name="m3_tertiary">#C2E7FF</color>
-    <color name="m3_tertiary_container">#004D65</color>
+    <color name="m3_tertiary">#00B3FF</color>
+    <color name="m3_tertiary_container">#BAE6FD</color>
 
     <!-- Text Colors -->
-    <color name="m3_on_surface">#E3E3E3</color>
-    <color name="m3_on_surface_variant">#C4C7C5</color>
-    <color name="m3_outline">#8E918F</color>
-    <color name="m3_outline_variant">#444746</color>
+    <color name="m3_on_surface">#0F172A</color>
+    <color name="m3_on_surface_variant">#475569</color>
+    <color name="m3_outline">#94A3B8</color>
+    <color name="m3_outline_variant">#CBD5E1</color>
 
     <!-- Status Colors -->
-    <color name="m3_error">#FFB4AB</color>
-    <color name="m3_error_container">#93000A</color>
-    <color name="m3_success">#81C995</color>
-    <color name="m3_success_container">#1B5E20</color>
-    <color name="m3_warning">#FFE082</color>
-    <color name="m3_warning_container">#7D5800</color>
+    <color name="m3_error">#FF2929</color>
+    <color name="m3_error_container">#FEE2E2</color>
+    <color name="m3_success">#10B981</color>
+    <color name="m3_success_container">#D1FAE5</color>
+    <color name="m3_warning">#F59E0B</color>
+    <color name="m3_warning_container">#FEF3C7</color>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- LEGACY COLORS (para compatibilidad) -->
     <!-- ═══════════════════════════════════════════════════════════ -->
 
     <!-- Primary Colors -->
-    <color name="primary">#8AB4F8</color>
-    <color name="primary_dark">#5E92E5</color>
-    <color name="primary_light">#D1E4FF</color>
+    <color name="primary">#1F6CFF</color>
+    <color name="primary_dark">#0087FF</color>
+    <color name="primary_light">#7ABEFF</color>
 
     <!-- Accent Colors -->
-    <color name="accent">#8AB4F8</color>
-    <color name="accent_dark">#5E92E5</color>
-    <color name="accent_light">#C2E7FF</color>
+    <color name="accent">#2D9BFF</color>
+    <color name="accent_dark">#0055FF</color>
+    <color name="accent_light">#D4E9FF</color>
 
     <!-- Status Colors -->
-    <color name="success">#81C995</color>
-    <color name="success_light">#1B5E20</color>
-    <color name="error">#FFB4AB</color>
-    <color name="error_light">#93000A</color>
-    <color name="warning">#FFE082</color>
-    <color name="warning_light">#7D5800</color>
-    <color name="info">#8AB4F8</color>
-    <color name="info_light">#004A77</color>
+    <color name="success">#00BE65</color>
+    <color name="success_light">#D1FAE5</color>
+    <color name="error">#EF4444</color>
+    <color name="error_light">#FEE2E2</color>
+    <color name="warning">#F59E0B</color>
+    <color name="warning_light">#FEF3C7</color>
+    <color name="info">#0167FF</color>
+    <color name="info_light">#E0F2FE</color>
 
-    <!-- Text Colors (Dark theme) -->
-    <color name="text_primary">#E3E3E3</color>
-    <color name="text_secondary">#C4C7C5</color>
-    <color name="text_hint">#8E918F</color>
+    <!-- Text Colors (Light theme) -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
+    <color name="text_hint">#94A3B8</color>
 
     <!-- Background Colors -->
-    <color name="background">#121212</color>
-    <color name="background_light">#121212</color>
-    <color name="surface">#1E1E1E</color>
-    <color name="card_background">#1E1E1E</color>
+    <color name="background">#F8FAFC</color>
+    <color name="background_light">#FFFFFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="card_background">#FFFFFF</color>
 
     <!-- Common Colors -->
     <color name="white">#FFFFFF</color>
-    <color name="black">#000000</color>
-    <color name="blue">#8AB4F8</color>
+    <color name="black">#212121</color>
+    <color name="blue">#0087FF</color>
     <color name="transparent">#00000000</color>
 
     <!-- Borders -->

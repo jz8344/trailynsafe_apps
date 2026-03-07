@@ -38,4 +38,45 @@
     <!-- Onboarding Colors - Dark Mode -->
     <color name="background_light">#1A1A2E</color>
     <color name="indicator_inactive">#3E3E55</color>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MATERIAL YOU / MATERIAL 3 - Tema Oscuro Premium -->
+    <!-- Inspirado en Google Apps (Maps, Gmail, Drive) -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+
+    <!-- Surface Colors (M3 Dark) -->
+    <color name="m3_surface">#121212</color>
+    <color name="m3_surface_variant">#1E1E1E</color>
+    <color name="m3_surface_container">#1A1A1A</color>
+    <color name="m3_surface_container_high">#242424</color>
+    <color name="m3_surface_container_highest">#2E2E2E</color>
+
+    <!-- Primary Colors (Blue tones - Google style) -->
+    <color name="m3_primary">#8AB4F8</color>
+    <color name="m3_primary_container">#004A77</color>
+    <color name="m3_on_primary">#003258</color>
+    <color name="m3_on_primary_container">#D1E4FF</color>
+
+    <!-- Secondary Colors -->
+    <color name="m3_secondary">#A8C7FA</color>
+    <color name="m3_secondary_container">#2D4665</color>
+    <color name="m3_on_secondary">#1B3A5C</color>
+
+    <!-- Tertiary Colors (Accent) -->
+    <color name="m3_tertiary">#C2E7FF</color>
+    <color name="m3_tertiary_container">#004D65</color>
+
+    <!-- Text Colors -->
+    <color name="m3_on_surface">#E3E3E3</color>
+    <color name="m3_on_surface_variant">#C4C7C5</color>
+    <color name="m3_outline">#8E918F</color>
+    <color name="m3_outline_variant">#444746</color>
+
+    <!-- Status Colors -->
+    <color name="m3_error">#FFB4AB</color>
+    <color name="m3_error_container">#93000A</color>
+    <color name="m3_success">#81C995</color>
+    <color name="m3_success_container">#1B5E20</color>
+    <color name="m3_warning">#FFE082</color>
+    <color name="m3_warning_container">#7D5800</color>
 </resources>
