@@ -88,6 +88,13 @@
             android:screenOrientation="portrait"
             android:parentActivityName=".ui.navigation.NavigationActivity" />
         
+        <!-- Soporte Activity -->
+        <activity
+            android:name=".ui.profile.SoporteActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".MainActivity" />
+        
         <!-- Wear OS Data Listener Service -->
         <service
             android:name=".services.WearableDataListenerService"

@@ -310,6 +310,68 @@
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- AYUDA Y SOPORTE -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cvSoporte"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/m3_primary_container"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="20dp"
+                    android:gravity="center_vertical">
+                    
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:src="@drawable/ic_chatbot"
+                        app:tint="@color/m3_on_primary_container" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Soporte Técnico"
+                            android:textColor="@color/m3_on_primary_container"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="ChatIA, Tickets, Ayuda"
+                            android:textColor="@color/m3_on_primary_container"
+                            android:alpha="0.8"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                    
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_arrow_forward"
+                        app:tint="@color/m3_on_primary_container" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
             <!-- BOTÓN CERRAR SESIÓN -->
             <!-- ═══════════════════════════════════════════════════════ -->
             <com.google.android.material.button.MaterialButton
