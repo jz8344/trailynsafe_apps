@@ -68,6 +68,22 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/tvSaludChofer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:background="@drawable/bg_drag_handle"
+            android:text="❤️ -- BPM"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/tvTrackingChofer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

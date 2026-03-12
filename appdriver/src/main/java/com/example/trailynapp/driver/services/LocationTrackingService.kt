@@ -18,6 +18,7 @@ import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.api.RetrofitClient
 import com.example.trailynapp.driver.api.UbicacionRequest
 import com.example.trailynapp.driver.utils.SessionManager
+import com.example.trailynapp.driver.utils.WearOSHealthManager
 import com.google.android.gms.location.*
 import kotlinx.coroutines.*
 
@@ -121,9 +122,15 @@ class LocationTrackingService : Service() {
 
     private fun sendLocationToServer(location: Location) {
         val token = sessionManager.getToken() ?: return
-        
+
         val batteryLevel = getBatteryLevel()
-        
+
+        // Adjuntar datos de salud solo si el monitoreo Wear OS está activo
+        val wearMonitoringEnabled = sessionManager.isWearOsMonitoringEnabled()
+        val healthData = if (wearMonitoringEnabled && WearOSHealthManager.isConnected(this)) {
+            WearOSHealthManager.getHealthData(this)
+        } else null
+
         val ubicacionRequest = UbicacionRequest(
             latitud = location.latitude,
             longitud = location.longitude,
@@ -131,7 +138,10 @@ class LocationTrackingService : Service() {
             velocidad = if (location.hasSpeed()) location.speed else null,
             heading = if (location.hasBearing()) location.bearing else null,
             accuracy = if (location.hasAccuracy()) location.accuracy else null,
-            battery_level = batteryLevel
+            battery_level = batteryLevel,
+            frecuencia_cardiaca = healthData?.heartRate?.takeIf { it > 0 },
+            pasos = healthData?.steps?.takeIf { it > 0 },
+            estado_salud = healthData?.status
         )
 
         serviceScope.launch {

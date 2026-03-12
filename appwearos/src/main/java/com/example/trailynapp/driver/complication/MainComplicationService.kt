@@ -1,39 +1,34 @@
 package com.example.trailynapp.driver.complication
 
+import android.content.Context
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
-import java.util.Calendar
+import com.example.trailynapp.driver.services.HealthDataSyncService
 
-/**
- * Skeleton for complication data source that returns short text.
- */
+/** Complicación que muestra la frecuencia cardíaca actual del conductor. */
 class MainComplicationService : SuspendingComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? {
-        if (type != ComplicationType.SHORT_TEXT) {
-            return null
-        }
-        return createComplicationData("Mon", "Monday")
+        if (type != ComplicationType.SHORT_TEXT) return null
+        return buildComplicationData("72♥", "72 BPM - Normal")
     }
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData {
-        return when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-            Calendar.SUNDAY -> createComplicationData("Sun", "Sunday")
-            Calendar.MONDAY -> createComplicationData("Mon", "Monday")
-            Calendar.TUESDAY -> createComplicationData("Tue", "Tuesday")
-            Calendar.WEDNESDAY -> createComplicationData("Wed", "Wednesday")
-            Calendar.THURSDAY -> createComplicationData("Thu", "Thursday")
-            Calendar.FRIDAY -> createComplicationData("Fri!", "Friday!")
-            Calendar.SATURDAY -> createComplicationData("Sat", "Saturday")
-            else -> throw IllegalArgumentException("too many days")
-        }
+        val prefs = getSharedPreferences(HealthDataSyncService.PREFS_NAME, Context.MODE_PRIVATE)
+        val heartRate = prefs.getInt(HealthDataSyncService.KEY_HEART_RATE, 0)
+        val status = prefs.getString(HealthDataSyncService.KEY_STATUS, "Sin señal") ?: "Sin señal"
+
+        val shortText = if (heartRate > 0) "${heartRate}♥" else "--♥"
+        val longText = if (heartRate > 0) "$heartRate BPM - $status" else "Sin señal"
+
+        return buildComplicationData(shortText, longText)
     }
 
-    private fun createComplicationData(text: String, contentDescription: String) =
+    private fun buildComplicationData(text: String, contentDescription: String) =
         ShortTextComplicationData.Builder(
             text = PlainComplicationText.Builder(text).build(),
             contentDescription = PlainComplicationText.Builder(contentDescription).build()

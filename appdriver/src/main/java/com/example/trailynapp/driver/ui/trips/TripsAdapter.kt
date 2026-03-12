@@ -1,4 +1,4 @@
-﻿package com.example.trailynapp.driver.ui.trips
+package com.example.trailynapp.driver.ui.trips
 
 import android.view.LayoutInflater
 import android.view.View
@@ -103,7 +103,21 @@ data class Parada(
         val confirmacion_id: Int? = null,
         val distancia_desde_anterior_km: String? = null,
         val tiempo_desde_anterior_min: Int? = null,
-        val cluster_asignado: Int? = null
+        val cluster_asignado: Int? = null,
+        // Relación con el niño a recoger
+        val confirmacion: ConfirmacionParada? = null
+)
+
+data class ConfirmacionParada(
+        val id: Int,
+        val hijo: HijoParada? = null
+)
+
+data class HijoParada(
+        val id: Int,
+        val nombre: String,
+        val grado: String? = null,
+        val grupo: String? = null
 )
 
 data class Escuela(

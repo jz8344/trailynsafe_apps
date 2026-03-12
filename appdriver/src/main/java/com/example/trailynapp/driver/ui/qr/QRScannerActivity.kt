@@ -43,10 +43,10 @@ class QRScannerActivity : AppCompatActivity() {
                     isScanComplete = true
                     barcodeView.pause()
                     
-                    val qrCode = result.text
+                    val qrCode = result.text.trim()
                     
-                    // Validar formato del QR (hijo_{id})
-                    if (qrCode.startsWith("hijo_")) {
+                    // Validar formato del QR (ej. hijo_{id} o QR_... inicial)
+                    if (qrCode.startsWith("hijo_", ignoreCase = true) || qrCode.startsWith("QR_", ignoreCase = true)) {
                         val intent = Intent()
                         intent.putExtra(EXTRA_QR_CODE, qrCode)
                         setResult(Activity.RESULT_OK, intent)
@@ -54,7 +54,7 @@ class QRScannerActivity : AppCompatActivity() {
                     } else {
                         Toast.makeText(
                             this@QRScannerActivity,
-                            "⚠️ Código QR inválido. Escanea el QR del hijo.",
+                            "⚠️ Código QR inválido ($qrCode no reconocido).",
                             Toast.LENGTH_SHORT
                         ).show()
                         isScanComplete = false

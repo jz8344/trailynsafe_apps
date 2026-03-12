@@ -153,7 +153,10 @@ data class UbicacionRequest(
         val velocidad: Float? = null,
         val heading: Float? = null,
         val accuracy: Float? = null,
-        val battery_level: Int? = null
+        val battery_level: Int? = null,
+        val frecuencia_cardiaca: Int? = null,
+        val pasos: Int? = null,
+        val estado_salud: String? = null
 )
 
 // Data class para escaneo de QR

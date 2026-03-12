@@ -16,6 +16,7 @@ class SessionManager(context: Context) {
         private const val KEY_APELLIDOS = "apellidos"
         private const val KEY_CORREO = "correo"
         private const val KEY_TELEFONO = "telefono"
+        const val KEY_WEAR_OS_MONITORING = "wear_os_monitoring"
     }
     
     fun saveLoginSession(
@@ -71,7 +72,17 @@ class SessionManager(context: Context) {
     fun getChoferApellidos(): String = getApellidos()
     fun getChoferCorreo(): String = getCorreo()
     fun getChoferTelefono(): String = getTelefono()
-    
+
+    // ---- Wear OS Monitoring toggle ----
+
+    fun setWearOsMonitoring(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_WEAR_OS_MONITORING, enabled).apply()
+    }
+
+    fun isWearOsMonitoringEnabled(): Boolean {
+        return prefs.getBoolean(KEY_WEAR_OS_MONITORING, false)
+    }
+
     fun logout() {
         prefs.edit().clear().apply()
     }

@@ -117,6 +117,7 @@ class HealthDataSyncService : Service(), SensorEventListener, MessageClient.OnMe
                 Sensor.TYPE_HEART_RATE -> {
                     currentHeartRate = it.values[0].toInt()
                     Log.d(TAG, "❤️ Frecuencia cardíaca: $currentHeartRate BPM")
+                    saveLocalHealthData()
                 }
                 Sensor.TYPE_STEP_COUNTER -> {
                     currentSteps = it.values[0].toInt()
@@ -126,6 +127,16 @@ class HealthDataSyncService : Service(), SensorEventListener, MessageClient.OnMe
         }
     }
     
+    private fun saveLocalHealthData() {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().apply {
+            putInt(KEY_HEART_RATE, currentHeartRate)
+            putInt(KEY_STEPS, currentSteps)
+            putString(KEY_STATUS, getHealthStatus(currentHeartRate))
+            putLong(KEY_TIMESTAMP, System.currentTimeMillis())
+            apply()
+        }
+    }
+
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
     
     private fun getHealthStatus(heartRate: Int): String {
@@ -149,5 +160,10 @@ class HealthDataSyncService : Service(), SensorEventListener, MessageClient.OnMe
     
     companion object {
         private const val TAG = "HealthDataSyncService"
+        const val PREFS_NAME = "WearOSLocalHealth"
+        const val KEY_HEART_RATE = "heart_rate"
+        const val KEY_STEPS = "steps"
+        const val KEY_STATUS = "status"
+        const val KEY_TIMESTAMP = "timestamp"
     }
 }

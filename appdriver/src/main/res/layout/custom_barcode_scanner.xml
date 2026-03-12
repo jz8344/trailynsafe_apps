@@ -14,6 +14,8 @@
         app:zxing_possible_result_points="#c0ffbd"
         app:zxing_result_view="#b0000000"
         app:zxing_viewfinder_laser="#ff0000"
-        app:zxing_viewfinder_mask="#60000000"/>
-    
+        app:zxing_viewfinder_mask="#60000000"
+        app:zxing_framing_rect_width="350dp"
+        app:zxing_framing_rect_height="350dp"/>
+
 </merge>

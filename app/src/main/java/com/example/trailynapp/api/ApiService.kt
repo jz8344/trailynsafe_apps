@@ -444,7 +444,9 @@ data class TrackingUbicacion(
         val velocidad_kmh: Double?,
         val heading: Double?,
         val timestamp: String?,
-        val actualizada: Boolean?
+        val actualizada: Boolean?,
+        val frecuencia_cardiaca: Int? = null,
+        val estado_salud: String? = null
 )
 
 data class TrackingParada(

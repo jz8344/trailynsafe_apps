@@ -14,6 +14,7 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -54,6 +55,8 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var progressConfirmaciones: ProgressBar
     private lateinit var btnAction: Button
     private lateinit var btnViewHealth: Button
+    private lateinit var switchWearOsMonitoring: SwitchMaterial
+    private lateinit var tvWearOsMonitoringDesc: TextView
     private lateinit var fabMyLocation: FloatingActionButton
     private lateinit var progressBar: ProgressBar
 
@@ -97,6 +100,8 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         progressConfirmaciones = findViewById(R.id.progressConfirmaciones)
         btnAction = findViewById(R.id.btnAccionPrincipal)
         btnViewHealth = findViewById(R.id.btnViewHealth)
+        switchWearOsMonitoring = findViewById(R.id.switchWearOsMonitoring)
+        tvWearOsMonitoringDesc = findViewById(R.id.tvWearOsMonitoringDesc)
         fabMyLocation = findViewById(R.id.fabMyLocation)
         progressBar = findViewById(R.id.progressBar)
 
@@ -107,6 +112,15 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         fabMyLocation.setOnClickListener { moveToMyLocation() }
         btnAction.setOnClickListener { handleTripAction() }
         btnViewHealth.setOnClickListener { showWearOSHealthDialog() }
+
+        // Inicializar toggle Wear OS Monitoring desde preferencias
+        val wearEnabled = sessionManager.isWearOsMonitoringEnabled()
+        switchWearOsMonitoring.isChecked = wearEnabled
+        updateWearOsMonitoringDesc(wearEnabled)
+        switchWearOsMonitoring.setOnCheckedChangeListener { _, isChecked ->
+            sessionManager.setWearOsMonitoring(isChecked)
+            updateWearOsMonitoringDesc(isChecked)
+        }
 
         loadTripData()
     }
@@ -345,13 +359,22 @@ class TripDetailActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun updateWearOsMonitoringDesc(enabled: Boolean) {
+        tvWearOsMonitoringDesc.text = if (enabled)
+            "Monitoreo de salud activado — se requerirá reloj"
+        else
+            "Monitoreo de salud desactivado"
+    }
+
     private fun handleTripAction() {
         val viaje = currentViaje ?: return
         val token = sessionManager.getToken() ?: return
 
         val estadoBd = viaje.estado_bd ?: viaje.estado
 
-        if (estadoBd == "ruta_generada" || estadoBd == "en_curso") {
+        // Solo verificar Wear OS si el toggle está activo
+        if ((estadoBd == "ruta_generada" || estadoBd == "en_curso") &&
+            sessionManager.isWearOsMonitoringEnabled()) {
             if (!WearOSHealthManager.isConnected(this)) {
                 showWearOSRequiredDialog()
                 return

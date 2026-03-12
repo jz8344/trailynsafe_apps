@@ -322,9 +322,12 @@ class NavigationActivity : AppCompatActivity(), OnMapReadyCallback, SensorEventL
 
         if (currentParadaIndex < paradas.size) {
             val nextStop = paradas[currentParadaIndex]
+            val nombreNino = nextStop.confirmacion?.hijo?.nombre ?: "Sin nombre registrado"
+            
             tvNextStopInfo.text =
                     """
                 📍 Siguiente Parada (${currentParadaIndex + 1}/${paradas.size})
+                👦 Recoger a: $nombreNino
                 ${nextStop.direccion}
                 ⏰ Hora estimada: ${nextStop.hora_estimada}
                 📏 ${nextStop.distancia_desde_anterior_km} km

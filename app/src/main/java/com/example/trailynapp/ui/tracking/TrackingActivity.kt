@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.view.animation.LinearInterpolator
 import android.widget.TextView
 import android.widget.Toast
@@ -43,6 +44,7 @@ class TrackingActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var tvEscuela: TextView
     private lateinit var tvDistancia: TextView
     private lateinit var tvActualizacion: TextView
+    private lateinit var tvSaludChofer: TextView
 
     private var driverMarker: Marker? = null
     private var routePolyline: Polyline? = null
@@ -73,6 +75,7 @@ class TrackingActivity : AppCompatActivity(), OnMapReadyCallback {
         tvEscuela = findViewById(R.id.tvTrackingEscuela)
         tvDistancia = findViewById(R.id.tvTrackingDistancia)
         tvActualizacion = findViewById(R.id.tvTrackingActualizacion)
+        tvSaludChofer = findViewById(R.id.tvSaludChofer)
 
         findViewById<FloatingActionButton>(R.id.fabBackTracking).setOnClickListener { finish() }
 
@@ -149,12 +152,30 @@ class TrackingActivity : AppCompatActivity(), OnMapReadyCallback {
                     if (ubicacion.actualizada == true) "📡 En vivo"
                     else "⏳ Última señal: ${ubicacion.timestamp ?: "?"}"
 
+            if (ubicacion.frecuencia_cardiaca != null) {
+                val bpm = ubicacion.frecuencia_cardiaca
+                val estado = ubicacion.estado_salud ?: "Normal"
+                tvSaludChofer.text = "❤️ $bpm BPM · $estado"
+                tvSaludChofer.setTextColor(
+                        when {
+                            bpm < 60 -> Color.parseColor("#2196F3")   // azul: bradicardia
+                            bpm <= 100 -> Color.parseColor("#4CAF50")  // verde: normal
+                            bpm <= 130 -> Color.parseColor("#FF9800")  // naranja: elevado
+                            else -> Color.parseColor("#F44336")        // rojo: taquicardia
+                        }
+                )
+                tvSaludChofer.visibility = View.VISIBLE
+            } else {
+                tvSaludChofer.visibility = View.GONE
+            }
+
             updateDriverMarker(ubicacion)
         }
                 ?: run {
                     tvEstado.text = "⏳ Esperando señal GPS"
                     tvVelocidad.text = "--"
                     tvActualizacion.text = "Sin ubicación reciente"
+                    tvSaludChofer.visibility = View.GONE
                 }
 
         if (routePolyline == null) {
