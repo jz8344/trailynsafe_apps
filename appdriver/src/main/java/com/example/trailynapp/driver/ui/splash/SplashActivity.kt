@@ -9,6 +9,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.appcompat.app.AppCompatDelegate
 import com.example.trailynapp.driver.MainActivity
 import com.example.trailynapp.driver.R
 import com.example.trailynapp.driver.ui.welcome.WelcomeActivity
@@ -21,6 +22,10 @@ class SplashActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Forzar Tema Oscuro en toda la AppDriver de manera prederteminada
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        
         setContentView(R.layout.activity_splash)
         
         // Obtener las vistas

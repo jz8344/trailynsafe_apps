@@ -155,13 +155,15 @@ class TripsAdapter(private val onTripClick: (Viaje) -> Unit) :
         private val tvTipoViaje: TextView = itemView.findViewById(R.id.tvTipoViaje)
         private val badgeEstado: TextView = itemView.findViewById(R.id.badgeEstado)
         private val btnAccion: MaterialButton = itemView.findViewById(R.id.btnAccion)
+        private val tvUnidad: TextView = itemView.findViewById(R.id.tvUnidad)
 
         fun bind(viaje: Viaje) {
             val escuela = viaje.escuela
             val context = itemView.context
 
-            tvEscuela.text = escuela?.nombre ?: "Escuela"
-
+            val nombreViaje = viaje.nombre ?: "Viaje"
+            val nombreEscuela = escuela?.nombre ?: "Escuela"
+            tvEscuela.text = "$nombreViaje • $nombreEscuela"
             // Mostrar información contextual según tipo de viaje
             val tipoInfo =
                     when {
@@ -171,6 +173,9 @@ class TripsAdapter(private val onTripClick: (Viaje) -> Unit) :
                         else -> "🔄 Recurrente"
                     }
             tvTipoViaje.text = tipoInfo
+
+            val matricula = viaje.unidad?.matricula ?: "Sin unidad"
+            tvUnidad.text = matricula
 
             // Formato de horario con confirmaciones
             val horario = viaje.hora_salida_programada ?: "Sin horario"

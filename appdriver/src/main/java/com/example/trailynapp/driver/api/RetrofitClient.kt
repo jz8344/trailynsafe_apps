@@ -5,6 +5,10 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import okhttp3.Protocol
+import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
+import java.io.IOException
 
 object RetrofitClient {
 
@@ -24,8 +28,25 @@ object RetrofitClient {
                         chain.proceed(request)
                 }
 
+        private val networkExceptionHandler = okhttp3.Interceptor { chain ->
+            try {
+                chain.proceed(chain.request())
+            } catch (e: Exception) {
+                // Atrapa IOException, SocketTimeoutException, UnknownHostException, etc.
+                // y retorna un response 503 simulado para evitar crashes.
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(503)
+                    .message("Sin conexion a internet")
+                    .body("{\"message\": \"Error de conexion o servidor inalcanzable\"}".toResponseBody(null))
+                    .build()
+            }
+        }
+
         private val okHttpClient =
                 OkHttpClient.Builder()
+                        .addInterceptor(networkExceptionHandler)
                         .addInterceptor(headerInterceptor)
                         .addInterceptor(loggingInterceptor)
                         .connectTimeout(30, TimeUnit.SECONDS)
